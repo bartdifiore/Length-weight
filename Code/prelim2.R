@@ -1,6 +1,6 @@
 library(tidyverse)
-lw_data <- readRDS('GMRI/data/bottomTrawlSurvey_indLengthWeight.rds')
-lw_coeffs <- readRDS('GMRI/data/lw_coeffs.rds')
+lw_data <- readRDS('Data/bottomTrawlSurvey_indLengthWeight.rds')
+lw_coeffs <- readRDS('Data/lw_coeffs.rds')
 
 # create tables to hold parameter values
 b.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)
@@ -120,6 +120,14 @@ b.by.decade['Cod', '2020s'] <- summary(cod_20s_lm)$coefficients[2,1]
 # actual model!
 cod_model <- lm(log(INDWT) ~ log(LENGTH)*decade, cod)
 summary(cod_model)
+
+library(emmeans)
+
+conts <- emmeans(cod_model, ~decade, by = LENGTH)
+pairs(conts)
+summary(cod$LENGTH)
+
+emmeans(mod1b, ~bait_type, condition = "response")
 
 # generating predictions for the model
 new_cod = expand.grid(LENGTH = seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 

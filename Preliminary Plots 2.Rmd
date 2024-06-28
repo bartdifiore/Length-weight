@@ -1,0 +1,886 @@
+---
+title: "Preliminary Plots 2"
+output: html_document
+date: "2024-06-24"
+---
+
+This document comes after making some corrections - notably adding in the 2020s as a decade, and making some more changes for clarity.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+lw_data <- readRDS('data/bottomTrawlSurvey_indLengthWeight.rds')
+lw_coeffs <- readRDS('data/lw_coeffs.rds')
+
+# create tables to hold parameter values
+b.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(b.by.decade) <- 
+  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(b.by.decade) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+a.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(a.by.decade) <- 
+  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(a.by.decade) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+```
+
+## Cod
+
+Original cod data: same as before.
+
+```{r original cod, echo = FALSE}
+cod <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC COD') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+### ORIGINAL DATA PLOT
+cod_orig <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_orig)
+```
+
+<br>
+Transformed cod data: same as before.
+
+```{r transformed cod, echo=FALSE}
+cod_log <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point() +
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_log)
+```
+<br>
+
+Original cod data, colored and then split by decade: a VERY clear difference can be seen here, more-so than when the 2010s and 2020s were grouped.
+
+```{r, original cod decade by color & split, echo=FALSE}
+### ORIGINAL DATA - COLORED BY DECADE
+cod_dec.by.color.orig <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_dec.by.color.orig)
+
+### ORIGINAL DATA - SPLIT BY DECADE
+cod_dec.split.orig <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_dec.split.orig)
+
+```
+<br>
+
+Transformed data, colored and then split by decade: still harder to see the difference in the transformed plot, but this still shows a clearer difference over time than when the 2010s and 2020s are grouped.
+
+```{r transformed cod with decade by color & split, echo=FALSE}
+### TRANSFORMED DATA - COLORED BY DECADE
+cod_dec.by.color.log <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_dec.by.color.log)
+
+### TRANSFORMED DATA - SPLIT BY DECADE
+cod_dec.split.log <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_dec.split.log)
+```
+<br>
+
+Cod Model & Predictions Plot: intriguing that the 2020s are not statistically different here. The slope of the log model appears to be similar in the 1990s and 2020s, so I suppose it makes sense. The general trend of the data is the same, but after analyzing the above plots it is hard to conclude that no difference exists.
+
+```{r cod model and predictions plot, echo=FALSE}
+cod_90s <- cod %>%
+  filter(decade == '1990s')
+cod_90s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_90s)
+a.by.decade['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[1,1]
+b.by.decade['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[2,1]
+
+cod_00s <- cod %>%
+  filter(decade == '2000s')
+cod_00s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_00s)
+a.by.decade['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[1,1]
+b.by.decade['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[2,1]
+
+cod_10s <- cod %>%
+  filter(decade == '2010s')
+cod_10s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_10s)
+a.by.decade['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[1,1]
+b.by.decade['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[2,1]
+
+cod_20s <- cod %>%
+  filter(decade == '2020s')
+cod_20s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_20s)
+a.by.decade['Cod', '2020s'] <- summary(cod_20s_lm)$coefficients[1,1]
+b.by.decade['Cod', '2020s'] <- summary(cod_20s_lm)$coefficients[2,1]
+
+# actual model!
+cod_model <- lm(log(INDWT) ~ log(LENGTH)*decade, cod)
+summary(cod_model)
+
+
+# generating predictions for the model
+new_cod = expand.grid(LENGTH = seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 
+new_cod$predicted <- exp(predict(cod_model, newdata = new_cod, type = "response")) 
+new_cod$lower <- exp(predict(cod_model, newdata = new_cod, type = "response", interval = 
+                               "confidence")[,3])
+new_cod$upper <- exp(predict(cod_model, newdata = new_cod, type = "response", interval = 
+                               "confidence")[,2])
+ggplot(new_cod, aes(x = LENGTH, y = predicted))+
+  geom_line(aes(color = decade))+
+  geom_ribbon(aes(group = decade, ymax = upper, ymin = lower), alpha = 0.1)+ 
+  scale_x_log10()+
+  scale_y_log10()+ 
+  theme_classic()+
+  labs(title = "Cod Predicted Weights by Length",
+       x = "Length",
+       y = "Individual Weight")
+```
+<br>
+
+Visualizing just the slope of cod: 2000s really throws this off. Interesting pattern.
+
+```{r cod slope, echo=FALSE}
+b_df <- as.data.frame(b.by.decade["Cod", , drop = FALSE])
+b_long <- pivot_longer(b_df, 
+                       cols = c("1990s", "2000s", "2010s", "2020s"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+ggplot(b_long, aes(x = Decade, y = Slope, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) for Cod",
+       x = "Decade",
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+## American Plaice
+
+Original plaice data: same as before. 
+
+```{r original plaice, echo=FALSE}
+plaice <- lw_data %>%
+  filter(COMNAME == 'AMERICAN PLAICE') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+### ORIGINAL DATA PLOT
+plaice_orig <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  labs(title = "American Plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_orig)
+
+```
+<br>
+
+Transformed plaice data: same as before.
+
+```{r transformed plaice, echo=FALSE}
+### TRANSFORMED DATA PLOT
+plaice_log <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point() +
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(plaice_log)
+```
+<br>
+
+Original plaice data, colored and then split by decade: the relationship definitely appears to be decreasing, especially looking at the split plot.
+
+```{r original plaice colored & split by decade, echo=FALSE}
+### ORIGINAL DATA - COLORED BY DECADE
+plaice_dec.by.color.orig <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "American Plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_dec.by.color.orig)
+
+### ORIGINAL DATA - SPLIT BY DECADE
+plaice_dec.split.orig <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "American Plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_dec.split.orig)
+```
+<br>
+
+Transformed plaice data, colored and then split by decade: same trend across all four decades, but the slope/trend appears similar.
+
+```{r transformed plaice data colored & split by decade, echo=FALSE}
+### TRANSFORMED DATA - COLORED BY DECADE
+plaice_dec.by.color.log <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(plaice_dec.by.color.log)
+
+### TRANSFORMED DATA - SPLIT BY DECADE
+plaice_dec.split.log <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(plaice_dec.split.log)
+```
+<br>
+
+American Plaice model & Predictions Plot: all terms are very significant, although I am still surprised to see the 2020s being the least significant based on the visualization of the data.
+
+```{r plaice model and predictions plot, echo=FALSE}
+# actual statistics stuff part two! - saving parameters
+plaice_90s <- plaice %>%
+  filter(decade == '1990s')
+plaice_90s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_90s)
+a.by.decade['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[1,1]
+b.by.decade['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[2,1]
+
+plaice_00s <- plaice %>%
+  filter(decade == '2000s')
+plaice_00s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_00s)
+a.by.decade['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[1,1]
+b.by.decade['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[2,1]
+
+plaice_10s <- plaice %>%
+  filter(decade == '2010s')
+plaice_10s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_10s)
+a.by.decade['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[1,1]
+b.by.decade['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[2,1]
+
+plaice_20s <- plaice %>%
+  filter(decade == '2020s')
+plaice_20s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_20s)
+a.by.decade['American Plaice', '2020s'] <- summary(plaice_20s_lm)$coefficients[1,1]
+b.by.decade['American Plaice', '2020s'] <- summary(plaice_20s_lm)$coefficients[2,1]
+
+# actual model!
+plaice_model <- lm(log(INDWT) ~ log(LENGTH)*decade, plaice)
+summary(plaice_model)
+
+# generating predictions for the model
+new_plaice = expand.grid(LENGTH = seq(min(plaice$LENGTH), max(plaice$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 
+new_plaice$predicted <- exp(predict(plaice_model, newdata = new_plaice, type = "response")) 
+new_plaice$lower <- exp(predict(plaice_model, newdata = new_plaice, type = "response", interval = 
+                                  "confidence")[,3])
+new_plaice$upper <- exp(predict(plaice_model, newdata = new_plaice, type = "response", interval = 
+                                  "confidence")[,2])
+ggplot(new_plaice, aes(x = LENGTH, y = predicted))+
+  geom_line(aes(color = decade))+
+  geom_ribbon(aes(group = decade, ymax = upper, ymin = lower), alpha = 0.1)+ 
+  scale_x_log10()+
+  scale_y_log10()+ 
+  theme_classic()+
+  labs(title = "American Plaice Predicted Weights by Length",
+       x = "Length",
+       y = "Individual Weight")
+```
+<br>
+
+American Plaice slope (b) over time: again, the 2000s estimate is drastically different. Here, it appears the slope is actually increasing. Very interesting result after examining the plots above.
+
+```{r plaice slope, echo = FALSE}
+b_df <- as.data.frame(b.by.decade["American Plaice", , drop = FALSE])
+b_long <- pivot_longer(b_df, 
+                       cols = c("1990s", "2000s", "2010s", "2020s"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+ggplot(b_long, aes(x = Decade, y = Slope, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) for American Plaice",
+       x = "Decade",
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+## Atlantic Herring
+
+Original Atlantic Herring data: I limited the individual weight at 0.75 kg (which may be too conservative - but it looked like every point above that was an outlier) to control for data errors. (No more 60 kg herring!) 
+
+```{r original herring, echo=FALSE}
+herring <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC HERRING') %>%
+  filter(INDWT != 0 & INDWT < 0.75) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+### ORIGINAL DATA
+herring_orig <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  labs(title = "Atlantic Herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_orig)
+```
+<br>
+Transformed Atlantic Herring data: same as before.
+
+```{r transformed herring, echo=FALSE}
+### TRANSFORMED DATA
+herring_log <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point() +
+  labs(title = "Atlantic Herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_log)
+```
+
+<br>
+Original Atlantic Herring data, colored and then split by decade: the split plot helps examine these differences better. It does appear that the relationship is changing by decade.
+
+```{r original herring by decade & split, echo=FALSE}
+### ORIGINAL DATA - COLORED BY DECADE
+herring_dec.by.color.orig <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Atlantic Herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_dec.by.color.orig)
+
+### ORIGINAL DATA - SPLIT BY DECADE
+herring_dec.split.orig <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_dec.split.orig)
+```
+
+<br>
+Transformed Atlantic Herring data, colored and then split by decade: both plots illustrate a difference in the relationship between the 2020s and other decades.
+
+```{r transformed herring by decade & split, echo=FALSE}
+### TRANSFORMED DATA - COLORED BY DECADE
+herring_dec.by.color.log <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Atlantic Herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_dec.by.color.log)
+
+### TRANSFORMED DATA - SPLIT BY DECADE
+herring_dec.split.log <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_dec.split.log)
+```
+
+<br>
+Atlantic Herring Model & Predictions Plot: the plots show what appears to be a significant difference, yet the model says otherwise. I'm intrigued that the 2020s decade is not a significant factor in the model when the distribution appears to be so different. Even the 2010s are barely significant.
+
+```{r herring model and predictions plot, echo=FALSE}
+# actual statistics stuff again! - saving parameters
+herring_90s <- herring %>%
+  filter(decade == '1990s')
+herring_90s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_90s)
+a.by.decade['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[1,1]
+b.by.decade['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[2,1]
+
+herring_00s <- herring %>%
+  filter(decade == '2000s')
+herring_00s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_00s)
+a.by.decade['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[1,1]
+b.by.decade['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[2,1]
+
+herring_10s <- herring %>%
+  filter(decade == '2010s')
+herring_10s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_10s)
+a.by.decade['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[1,1]
+b.by.decade['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[2,1]
+
+herring_20s <- herring %>%
+  filter(decade == '2020s')
+herring_20s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_20s)
+a.by.decade['Atlantic Herring', '2020s'] <- summary(herring_20s_lm)$coefficients[1,1]
+b.by.decade['Atlantic Herring', '2020s'] <- summary(herring_20s_lm)$coefficients[2,1]
+
+# actual model!
+herring_model <- lm(log(INDWT) ~ log(LENGTH)*decade, herring)
+summary(herring_model)
+
+# generating predictions for the model
+new_herring = expand.grid(LENGTH = seq(min(herring$LENGTH), max(herring$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 
+new_herring$predicted <- exp(predict(herring_model, newdata = new_herring, type = "response")) 
+new_herring$lower <- exp(predict(herring_model, newdata = new_herring, type = "response", interval = 
+                                   "confidence")[,3])
+new_herring$upper <- exp(predict(herring_model, newdata = new_herring, type = "response", interval = 
+                                   "confidence")[,2])
+ggplot(new_herring, aes(x = LENGTH, y = predicted))+
+  geom_line(aes(color = decade))+
+  geom_ribbon(aes(group = decade, ymax = upper, ymin = lower), alpha = 0.1)+ 
+  scale_x_log10()+
+  scale_y_log10()+ 
+  theme_classic()+
+  labs(title = "Atlantic Herring Predicted Weights by Length",
+       x = "Length",
+       y = "Individual Weight")
+```
+
+<br>
+Atlantic herring slope over time: the slope appears to increase yet again. Like other species, it peaks in the 2000s. 
+
+```{r herring slope, echo=FALSE}
+b_df <- as.data.frame(b.by.decade["Atlantic Herring", , drop = FALSE])
+b_long <- pivot_longer(b_df, 
+                       cols = c("1990s", "2000s", "2010s", "2020s"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+ggplot(b_long, aes(x = Decade, y = Slope, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) for Atlantic herring",
+       x = "Decade",
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+## Spiny Dogfish
+
+Original spiny dogfish data: same as before.
+
+```{r original dogfish, echo=FALSE}
+dogfish <- lw_data %>%
+  filter(COMNAME == 'SPINY DOGFISH') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+### ORIGINAL DATA PLOT
+dogfish_orig <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  labs(title = "Spiny Dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_orig)
+```
+
+<br> 
+
+Transformed spiny dogfish data: same as before.
+
+```{r transformed dogfish, echo=FALSE}
+### TRANSFORMED DATA PLOT
+dogfish_log <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point() +
+  labs(title = "Spiny Dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_log)
+```
+
+<br>
+Original spiny dogfish data, colored and then split by decade: it looks very different, especially in the 2020s.
+
+```{r original dogfish colored & split by decade, echo=FALSE}
+### ORIGINAL DATA - COLORED BY DECADE
+dogfish_dec.by.color.orig <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Spiny Dogfish Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_dec.by.color.orig)
+
+### ORIGINAL DATA - SPLIT BY DECADE
+dogfish_dec.split.orig <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Spiny Dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_dec.split.orig)
+```
+<br>
+
+Transformed spiny dogfish data, colored and then split by decade: the slopes do appear to be very similar.
+
+```{r transformed dogfish colored & split by decade, echo=FALSE}
+### TRANSFORMED DATA - COLORED BY DECADE
+dogfish_dec.by.color.log <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point(aes(color = decade))+
+  labs(title = "Spiny Dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_dec.by.color.log)
+
+### TRANSFORMED DATA - SPLIT BY DECADE
+dogfish_dec.split.log <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT)) +
+  geom_point()+
+  facet_wrap(~decade)+
+  labs(title = "Spiny Dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_dec.split.log)
+```
+<br> 
+Spiny dogfish Model & Predictions Plot: Finally! Results make sense!
+
+```{r, echo=FALSE}
+# actual statistics stuff once more! - saving parameters
+dogfish_90s <- dogfish %>%
+  filter(decade == '1990s')
+dogfish_90s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_90s)
+a.by.decade['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[1,1]
+b.by.decade['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[2,1]
+
+dogfish_00s <- dogfish %>%
+  filter(decade == '2000s')
+dogfish_00s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_00s)
+a.by.decade['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[1,1]
+b.by.decade['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[2,1]
+
+dogfish_10s <- dogfish %>%
+  filter(decade == '2010s')
+dogfish_10s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_10s)
+a.by.decade['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[1,1]
+b.by.decade['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[2,1]
+
+dogfish_20s <- dogfish %>%
+  filter(decade == '2020s')
+dogfish_20s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_20s)
+a.by.decade['Spiny Dogfish', '2020s'] <- summary(dogfish_20s_lm)$coefficients[1,1]
+b.by.decade['Spiny Dogfish', '2020s'] <- summary(dogfish_20s_lm)$coefficients[2,1]
+
+# actual model!
+dogfish_model <- lm(log(INDWT) ~ log(LENGTH)*decade, dogfish)
+summary(dogfish_model)
+
+# generating predictions for the model
+new_dogfish = expand.grid(LENGTH = seq(min(dogfish$LENGTH), max(dogfish$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 
+new_dogfish$predicted <- exp(predict(dogfish_model, newdata = new_dogfish, type = "response")) 
+new_dogfish$lower <- exp(predict(dogfish_model, newdata = new_dogfish, type = "response", interval = 
+                                   "confidence")[,3])
+new_dogfish$upper <- exp(predict(dogfish_model, newdata = new_dogfish, type = "response", interval = 
+                                   "confidence")[,2])
+ggplot(new_dogfish, aes(x = LENGTH, y = predicted))+
+  geom_line(aes(color = decade))+
+  geom_ribbon(aes(group = decade, ymax = upper, ymin = lower), alpha = 0.1)+ 
+  scale_x_log10()+
+  scale_y_log10()+ 
+  theme_classic()+
+  labs(title = "Spiny Dogfish Predicted Weights by Length",
+       x = "Length",
+       y = "Individual Weight")
+```
+
+<br> 
+
+Spiny dogfish slope (b) through time: very significant decrease is shown - helpful for the hypothesis that equilibrium fish will be most impacted.
+
+```{r dogfish slope, echo=FALSE}
+b_df <- as.data.frame(b.by.decade["Spiny Dogfish", , drop = FALSE])
+b_long <- pivot_longer(b_df, 
+                       cols = c("1990s", "2000s", "2010s", "2020s"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+ggplot(b_long, aes(x = Decade, y = Slope, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) for Spiny Dogfish",
+       x = "Decade",
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+## b Table and All-species figure
+
+As we can see, there is great variability to what changes in b are occurring by species.
+
+```{r table and line plot, echo=FALSE}
+print(b.by.decade)
+
+b.to.df <- data.frame(
+  Species = c("Cod", "American Plaice", "Atlantic Herring", "Spiny Dogfish"),
+  `1990s` = c(3.075384, 3.281383, 3.048610, 3.124006),
+  `2000s` = c(3.104295, 3.341870, 3.126295, 3.179436),
+  `2010s` = c(3.083302, 3.304652, 3.035329, 3.118535),
+  `2020s` = c(3.072278, 3.310441, 3.087207, 3.011393),
+  stringsAsFactors = FALSE
+)
+
+b.long <- pivot_longer(b.to.df, 
+                       cols = starts_with("X"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+
+ggplot(b.long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) By Decade", x = "Decade", y = "Slope (b)") +
+  theme_minimal()
+```
+
+<br> 
+
+I got curious and did some extra analyses. I constructed a plot based on all the species from Kathy's paper whose growth pattern changed such that they were larger at lower ages in the 2010s compared to 1970-2009, but eventually plateaued to a smaller size.
+
+```{r more species plot, echo=FALSE}
+decades <- c('1990s', '2000s', '2010s', '2020s')
+species_labels <- c('American Plaice', 'Atlantic Herring', 'Winter Skate', 'Pollock', 'White Hake', 'Witch Flounder', 'Atlantic Mackerel')
+b.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(b.by.decade) <- species_labels
+colnames(b.by.decade) <- decades
+
+a.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(a.by.decade) <- species_labels
+colnames(a.by.decade) <- decades
+
+species_list <- c('AMERICAN PLAICE', 'ATLANTIC HERRING', 'WINTER SKATE', 'POLLOCK', 'WHITE HAKE', 'WITCH FLOUNDER', 'ATLANTIC MACKEREL')
+
+for (i in seq_along(species_list)) {
+  species <- species_list[i]
+  species_name <- species_labels[i]
+  
+  data <- lw_data %>%
+    filter(COMNAME == species) %>%
+    filter(INDWT != 0) %>%
+    mutate(decade = case_when(
+      YEAR >= 2020 ~ "2020s",
+      YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+      YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+      YEAR < 2000 ~ "1990s"
+    ))
+  
+  for (dec in decades) {
+    dec_data <- data %>%
+      filter(decade == dec)
+      dec_lm <- lm(log(INDWT) ~ log(LENGTH), dec_data)
+      a.by.decade[species_name, dec] <- summary(dec_lm)$coefficients[1, 1]
+      b.by.decade[species_name, dec] <- summary(dec_lm)$coefficients[2, 1]
+    }
+  }
+
+b_by_decade_df <- as.data.frame(b.by.decade, stringsAsFactors = FALSE)
+b_by_decade_df$Species <- rownames(b.by.decade)
+rownames(b.by.decade) <- NULL
+b_by_decade_df <- b_by_decade_df %>%
+  select(all_of(c("Species", decades)))
+
+b_long <- pivot_longer(b_by_decade_df, 
+                       cols = decades, 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+
+ggplot(b_long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) By Decade", 
+       x = "Decade", 
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+Looking only from the 1990s to 2020s:
+
+```{r more species 90s and 20s, echo=FALSE}
+decades <- c('1990s', '2020s')
+species_labels <- c('American Plaice', 'Atlantic Herring', 'Winter Skate', 'Pollock', 'White Hake', 'Witch Flounder', 'Atlantic Mackerel')
+
+b.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(b.by.decade) <- species_labels
+colnames(b.by.decade) <- decades
+
+a.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(a.by.decade) <- species_labels
+colnames(a.by.decade) <- decades
+
+species_list <- c('AMERICAN PLAICE', 'ATLANTIC HERRING', 'WINTER SKATE', 'POLLOCK', 'WHITE HAKE', 'WITCH FLOUNDER', 'ATLANTIC MACKEREL')
+
+for (i in seq_along(species_list)) {
+  species <- species_list[i]
+  species_name <- species_labels[i]
+  
+  data <- lw_data %>%
+    filter(COMNAME == species) %>%
+    filter(INDWT != 0) %>%
+    mutate(decade = case_when(
+      YEAR >= 2020 ~ "2020s",
+      YEAR < 2000 ~ "1990s" 
+    ))
+  
+  for (dec in decades) {
+    dec_data <- data %>%
+      filter(decade == dec)
+      dec_lm <- lm(log(INDWT) ~ log(LENGTH), dec_data)
+      a.by.decade[species_name, dec] <- summary(dec_lm)$coefficients[1, 1]
+      b.by.decade[species_name, dec] <- summary(dec_lm)$coefficients[2, 1]
+  }
+}
+b_by_decade_df <- as.data.frame(b.by.decade, stringsAsFactors = FALSE)
+b_by_decade_df$Species <- rownames(b.by.decade)
+rownames(b.by.decade) <- NULL
+b_by_decade_df <- b_by_decade_df %>%
+  select(Species, everything())
+
+b_long <- pivot_longer(b_by_decade_df, 
+                       cols = decades, 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+
+ggplot(b_long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) By Decade", 
+       x = "Decade", 
+       y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+
+We see that some have a decreasing relationship, some have an increasing relationship, and some stay about the same. 
+
+I also recalculated the parameters for all species in the survey: here's the dataframe. Most had little data so the results aren't very interesting, and I did not account for errors in measurement with any of these species yet (i.e. the 60 kg herring is included in this model, and I'm sure there are plenty more errors like it). I might try to clean this up a bit, maybe filter by sex/season like the Wigley paper did, but I think looking at the spatial distribution differences first would be most interesting.
+
+```{r all species slope table, echo=FALSE}
+species_labels <- unique(lw_data$COMNAME)
+decades <- c('1990s', '2000s', '2010s', '2020s')
+
+b.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(b.by.decade) <- species_labels
+colnames(b.by.decade) <- decades
+
+a.by.decade <- matrix(nrow = length(species_labels), ncol = length(decades), byrow = TRUE)
+rownames(a.by.decade) <- species_labels
+colnames(a.by.decade) <- decades
+
+for (species in species_labels) {
+  
+  data <- lw_data %>%
+    filter(COMNAME == species) %>%
+    filter(INDWT != 0) %>%
+    mutate(decade = case_when(
+      YEAR >= 2020 ~ "2020s",
+      YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+      YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+      YEAR < 2000 ~ "1990s"))
+  
+  for (dec in decades) {
+    dec_data <- data %>%
+      filter(decade == dec)
+    
+    if (nrow(dec_data) > 0) {
+      dec_lm <- lm(log(INDWT) ~ log(LENGTH), dec_data)
+      a.by.decade[species, dec] <- coef(dec_lm)[1]
+      b.by.decade[species, dec] <- coef(dec_lm)[2]
+    }
+  }
+}
+
+b_by_decade_df <- as.data.frame(b.by.decade, stringsAsFactors = FALSE)
+print(b_by_decade_df)
+```

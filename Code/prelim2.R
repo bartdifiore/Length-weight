@@ -1,6 +1,6 @@
 library(tidyverse)
-lw_data <- readRDS('GMRI/data/bottomTrawlSurvey_indLengthWeight.rds')
-lw_coeffs <- readRDS('GMRI/data/lw_coeffs.rds')
+lw_data <- readRDS('Data/bottomTrawlSurvey_indLengthWeight.rds')
+lw_coeffs <- readRDS('Data/lw_coeffs.rds')
 
 # create tables to hold parameter values
 b.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)

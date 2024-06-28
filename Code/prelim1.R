@@ -1,21 +1,25 @@
-library(tidyverse)
-lw_data <- readRDS('data/bottomTrawlSurvey_indLengthWeight.rds')
-lw_coeffs <- readRDS('data/lw_coeffs.rds')
+## -------------------------------------------------------------------------------
+# Preliminary Analysis 1: this code constructs plots for Cod, American Plaice,
+# Atlantic Herring, and Spiny Dogfish species in the 1990s, 2000s, and 2010s + 2020s.
+## --------------------------------------------------------------------------------
+ 
+library(tidyverse) # loading in packages & data
+lw_data <- readRDS('Data/bottomTrawlSurvey_indLengthWeight.rds')
+lw_coeffs <- readRDS('Data/lw_coeffs.rds')
 
-# create tables to hold parameter values
-b.by.decade <- matrix(nrow=4, ncol=3, byrow=TRUE)
-rownames(b.by.decade) <- 
-  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
-colnames(b.by.decade) <- 
-  c('1990s', '2000s', '2010s')
+# create table to hold b parameter
+prelim1.b <- matrix(nrow=4, ncol=3, byrow=TRUE)
+rownames(prelim1.b) <- c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(prelim1.b) <- c('1990s', '2000s', '2010s')
 
-a.by.decade <- matrix(nrow=4, ncol=3, byrow=TRUE)
-rownames(a.by.decade) <- 
-  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
-colnames(a.by.decade) <- 
-  c('1990s', '2000s', '2010s')
+# create table to hold log(a) parameter
+prelim1.a <- matrix(nrow=4, ncol=3, byrow=TRUE)
+rownames(prelim1.a) <- c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(prelim1.a) <- c('1990s', '2000s', '2010s')
 
-# ************************* COD ********************************************
+#-------------------------------------------------------------------------------
+# COD
+#-------------------------------------------------------------------------------
 cod <- lw_data %>%
   filter(COMNAME == 'ATLANTIC COD') %>%
   filter(INDWT != 0) %>%
@@ -23,7 +27,7 @@ cod <- lw_data %>%
                             YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
                             YEAR < 2000 ~ "1990s"))
 
-### ORIGINAL DATA PLOT
+### Original Cod Data Plot
 cod_orig <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT))+
   geom_point() +
@@ -33,7 +37,7 @@ cod_orig <- cod %>%
   theme_bw()
 print(cod_orig)
 
-### TRANSFORMED DATA PLOT
+### Transformed Cod Data Plot
 cod_log <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT)) +
   geom_point() +
@@ -45,7 +49,7 @@ cod_log <- cod %>%
   scale_y_log10()
 print(cod_log)
 
-### ORIGINAL DATA - COLORED BY DECADE
+### Original Cod Data - colored by decade
 cod_dec.by.color.orig <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT)) +
   geom_point(aes(color = decade))+
@@ -55,7 +59,7 @@ cod_dec.by.color.orig <- cod %>%
   theme_bw()
 print(cod_dec.by.color.orig)
 
-### TRANSFORMED DATA - COLORED BY DECADE
+### Transformed Cod Data - colored by decade
 cod_dec.by.color.log <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT)) +
   geom_point(aes(color = decade))+
@@ -67,7 +71,7 @@ cod_dec.by.color.log <- cod %>%
   scale_y_log10()
 print(cod_dec.by.color.log)
 
-### ORIGINAL DATA - SPLIT BY DECADE
+### Original Cod Data - split by decade
 cod_dec.split.orig <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT)) +
   geom_point()+
@@ -78,7 +82,7 @@ cod_dec.split.orig <- cod %>%
   theme_bw()
 print(cod_dec.split.orig)
 
-### TRANSFORMED DATA - SPLIT BY DECADE
+### Transformed Cod Data - split by decade
 cod_dec.split.log <- cod %>%
   ggplot(aes(x = LENGTH, y = INDWT)) +
   geom_point()+
@@ -95,20 +99,20 @@ print(cod_dec.split.log)
 cod_90s <- cod %>%
   filter(decade == '1990s')
 cod_90s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_90s)
-a.by.decade['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[1,1]
-b.by.decade['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[2,1]
+prelim1.a['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[1,1]
+prelim1.b['Cod', '1990s'] <- summary(cod_90s_lm)$coefficients[2,1]
 
 cod_00s <- cod %>%
   filter(decade == '2000s')
 cod_00s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_00s)
-a.by.decade['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[1,1]
-b.by.decade['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[2,1]
+prelim1.a['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[1,1]
+prelim1.b['Cod', '2000s'] <- summary(cod_00s_lm)$coefficients[2,1]
 
 cod_10s <- cod %>%
   filter(decade == '2010s')
 cod_10s_lm <- lm(log(INDWT) ~ log(LENGTH), cod_10s)
-a.by.decade['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[1,1]
-b.by.decade['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[2,1]
+prelim1.a['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[1,1]
+prelim1.b['Cod', '2010s'] <- summary(cod_10s_lm)$coefficients[2,1]
 
 # actual model!
 cod_model <- lm(log(INDWT) ~ log(LENGTH)*decade, cod)
@@ -212,22 +216,22 @@ plaice_90s <- plaice %>%
   filter(decade == '1990s')
 plaice_90s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_90s)
 summary(plaice_90s_lm)
-a.by.decade['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[1,1]
-b.by.decade['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[2,1]
+prelim1.a['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[1,1]
+prelim1.b['American Plaice', '1990s'] <- summary(plaice_90s_lm)$coefficients[2,1]
 
 plaice_00s <- plaice %>%
   filter(decade == '2000s')
 plaice_00s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_00s)
 summary(plaice_00s_lm)
-a.by.decade['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[1,1]
-b.by.decade['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[2,1]
+prelim1.a['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[1,1]
+prelim1.b['American Plaice', '2000s'] <- summary(plaice_00s_lm)$coefficients[2,1]
 
 plaice_10s <- plaice %>%
   filter(decade == '2010s')
 plaice_10s_lm <- lm(log(INDWT) ~ log(LENGTH), plaice_10s)
 summary(plaice_10s_lm)
-a.by.decade['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[1,1]
-b.by.decade['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[2,1]
+prelim1.a['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[1,1]
+prelim1.b['American Plaice', '2010s'] <- summary(plaice_10s_lm)$coefficients[2,1]
 
 # actual model!
 plaice_model <- lm(log(INDWT) ~ log(LENGTH)*decade, plaice)
@@ -334,22 +338,22 @@ herring_90s <- herring %>%
   filter(decade == '1990s')
 herring_90s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_90s)
 summary(herring_90s_lm)
-a.by.decade['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[1,1]
-b.by.decade['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[2,1]
+prelim1.a['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[1,1]
+prelim1.b['Atlantic Herring', '1990s'] <- summary(herring_90s_lm)$coefficients[2,1]
 
 herring_00s <- herring %>%
   filter(decade == '2000s')
 herring_00s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_00s)
 summary(herring_00s_lm)
-a.by.decade['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[1,1]
-b.by.decade['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[2,1]
+prelim1.a['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[1,1]
+prelim1.b['Atlantic Herring', '2000s'] <- summary(herring_00s_lm)$coefficients[2,1]
 
 herring_10s <- herring %>%
   filter(decade == '2010s')
 herring_10s_lm <- lm(log(INDWT) ~ log(LENGTH), herring_10s)
 summary(herring_10s_lm)
-a.by.decade['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[1,1]
-b.by.decade['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[2,1]
+prelim1.a['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[1,1]
+prelim1.b['Atlantic Herring', '2010s'] <- summary(herring_10s_lm)$coefficients[2,1]
 
 # actual model!
 herring_model <- lm(log(INDWT) ~ log(LENGTH)*decade, herring)
@@ -453,22 +457,22 @@ dogfish_90s <- dogfish %>%
   filter(decade == '1990s')
 dogfish_90s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_90s)
 summary(dogfish_90s_lm)
-a.by.decade['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[1,1]
-b.by.decade['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[2,1]
+prelim1.a['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[1,1]
+prelim1.b['Spiny Dogfish', '1990s'] <- summary(dogfish_90s_lm)$coefficients[2,1]
 
 dogfish_00s <- dogfish %>%
   filter(decade == '2000s')
 dogfish_00s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_00s)
 summary(dogfish_00s_lm)
-a.by.decade['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[1,1]
-b.by.decade['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[2,1]
+prelim1.a['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[1,1]
+prelim1.b['Spiny Dogfish', '2000s'] <- summary(dogfish_00s_lm)$coefficients[2,1]
 
 dogfish_10s <- dogfish %>%
   filter(decade == '2010s')
 dogfish_10s_lm <- lm(log(INDWT) ~ log(LENGTH), dogfish_10s)
 summary(dogfish_10s_lm)
-a.by.decade['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[1,1]
-b.by.decade['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[2,1]
+prelim1.a['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[1,1]
+prelim1.b['Spiny Dogfish', '2010s'] <- summary(dogfish_10s_lm)$coefficients[2,1]
 
 # actual model!
 dogfish_model <- lm(log(INDWT) ~ log(LENGTH)*decade, dogfish)
@@ -492,7 +496,7 @@ ggplot(new_dogfish, aes(x = LENGTH, y = predicted))+
        y = "Individual Weight")
 
 ### ****************** TABLES **************************
-print(b.by.decade)
+print(prelim1.b)
 
 b.to.df <- data.frame(
   Species = c("Cod", "American Plaice", "Atlantic Herring", "Spiny Dogfish"),

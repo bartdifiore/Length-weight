@@ -1,0 +1,421 @@
+---
+title: "Spatial Analysis"
+output: html_document
+date: "2024-07-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(emmeans)
+lw_spatial <- readRDS('Data/length_weight_epu.rds')
+lw_spatial <- lw_spatial %>%
+  filter(INDWT != 0 & INDWT < 750) %>%
+  filter(!is.na(EPU)) %>%
+  mutate(decade = case_when(YEAR < 2000 ~ "1990s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2020 ~ "2020s"))
+# create tables to hold parameter values
+b.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(b.by.decade) <- 
+  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(b.by.decade) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+a.by.decade <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(a.by.decade) <- 
+  c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(a.by.decade) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+```
+
+## Spatial Analysis
+
+First, this plot shows the length and weight of all species from the trawl survey, divided by their EPU and decade. The Mid-Atlantic Bight EPU plot clearly shows a different pattern than the other EPUs. The data in these plots were restricted to weights less than 750 (still unsure what the units are - is it kg?), as it appeared all points above this value were data errors (extreme outliers).
+
+```{r all decades and all epus}
+ggplot(data = lw_spatial, aes(x = LENGTH, y=INDWT)) +
+  geom_point() + 
+  labs(title = "Length vs. Weight for all Fish Caught in the Northeast United States",
+         x = "Length", 
+         y = "Weight") +
+  facet_grid(rows=vars(decade), cols=vars(EPU)) +
+  theme_bw()
+```
+<br>
+
+All coefficients in the model predicting log(weight) from log(length) are very significant when we add in the interactions between log(length) and decade and log(length) and EPU.
+
+<br>
+```{r all species model}
+model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data = lw_spatial)
+summary(model)
+```
+<br>
+
+## Gulf of Maine Model
+
+<br>
+
+When the data is filtered to consider only fish caught in the Gulf of Maine, all coefficients continue to be very significant. This data was limited to individual weights below 60 as all points above were extreme outliers/likely data errors. It isn't very easy to detect a pattern when looking at all species, so we'll analyze the four species selected in earlier analyses: Atlantic cod, American plaice, Atlantic herring, and spiny dogfish.
+
+```{r gom model & plot}
+gom <- lw_spatial %>%
+  filter(EPU == "GOM") %>%
+  filter(INDWT != 0 & INDWT < 60)
+
+ggplot(data = gom, aes(x=LENGTH, y=INDWT)) +
+  geom_point() +
+  facet_wrap(~decade) +
+  labs(title = "Length vs. Weight for all Fish Caught in the Gulf of Maine",
+         x = "Length", 
+         y = "Weight") +
+  theme_bw()
+
+gom_model <- lm(log(INDWT) ~ log(LENGTH)*decade, data=gom)
+summary(gom_model)
+```
+<br>
+
+## Atlantic Cod
+
+From the plot, it looks like cod in the Gulf of Maine are growing to larger sizes, especially compared to the Mid-Atlantic Bight. The abundance caught per region also appears to differ, and this factor could contribute to the slight difference observed in the trends for each EPU.
+
+```{r cod facet by EPU}
+cod <- lw_spatial %>%
+  filter(COMNAME == "ATLANTIC COD")
+
+ggplot(data=cod, aes(x=LENGTH, y=INDWT)) +
+  theme_bw() +
+  facet_wrap(~EPU) +
+  labs(title = "Atlantic Cod in the Gulf of Maine: Length vs. Weight",
+         x = "Length", 
+         y = "Weight") +
+  geom_point(aes(color=decade))
+```
+<br>
+
+When considering all regions, the 2010s and 2020s are not significantly different from the 1990s. We do see that the weights of cod at their mean length vary significantly between both EPUs and decades.
+
+```{r cod model all EPUs}
+cod_model <- lm(log(INDWT) ~ log(LENGTH)*EPU + log(LENGTH)*decade, data = cod)
+summary(cod_model)
+
+cod.conts.epu <- emmeans(cod_model, ~EPU, by = "LENGTH", data=cod)
+pairs(cod.conts.epu)
+
+cod.conts.dec <- emmeans(cod_model, ~decade, by = "LENGTH", data=cod)
+pairs(cod.conts.dec)
+```
+<br>
+Model containing data from only cod in the Gulf of Maine: all terms appear to be significant. 
+
+```{r cod in GOM}
+cod_gom <- cod %>%
+  filter(EPU == "GOM")
+
+ggplot(data = cod_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  labs(title = "Atlantic Cod in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+
+ggplot(data = cod_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  facet_wrap(~decade) +
+  labs(title = "Atlantic Cod in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+
+cod_gom <- cod %>%
+  filter(EPU == "GOM")
+
+cod_gom_model <- lm(log(INDWT) ~ log(LENGTH)*decade, data = cod_gom)
+summary(cod_gom_model)
+
+a.by.decade["Cod", "1990s"] <- cod_gom_model$coefficients[1]
+b.by.decade["Cod", "1990s"] <- cod_gom_model$coefficients[2]
+a.by.decade["Cod", "2000s"] <- cod_gom_model$coefficients[1] + cod_gom_model$coefficients[3]
+b.by.decade["Cod", "2000s"] <- cod_gom_model$coefficients[2] + cod_gom_model$coefficients[6]
+a.by.decade["Cod", "2010s"] <- cod_gom_model$coefficients[1] + cod_gom_model$coefficients[4]
+b.by.decade["Cod", "2010s"] <- cod_gom_model$coefficients[2] + cod_gom_model$coefficients[7]
+a.by.decade["Cod", "2020s"] <- cod_gom_model$coefficients[1] + cod_gom_model$coefficients[5]
+b.by.decade["Cod", "2020s"] <- cod_gom_model$coefficients[2] + cod_gom_model$coefficients[8]
+```
+<br>
+We also see that the only significant differences in weight at the mean length occur between the 1990s and 2000s and the 2000s and 2010s. 
+
+```{r cod conts GOM}
+cod.conts.gom <- emmeans(cod_gom_model, ~decade, by = "LENGTH", data=cod_gom)
+pairs(cod.conts.gom)
+```
+<br>
+## American Plaice
+
+We see that most American plaice are caught in the Gulf of Maine and very few are landed in the Mid-Atlantic Bight. The general trend of the data is similar for all EPUs.
+
+```{r plaice all EPUs plot}
+plaice <- lw_spatial %>%
+  filter(COMNAME == "AMERICAN PLAICE") %>%
+  filter(INDWT < 4)
+
+ggplot(data=plaice, aes(x=LENGTH, y=INDWT)) +
+  theme_bw() +  
+  labs(title = "American Plaice in the Gulf of Maine: Length vs. Weight",
+         x = "Length", 
+         y = "Weight") +
+  facet_wrap(~EPU) +
+  geom_point(aes(color=decade))
+```
+<br>
+
+In the model including EPUs, we see some significant coefficients. Barely any data exists for the MAB region and thus it makes sense that the related terms are insignificant. We see that the mean length of American plaice in the Gulf of Maine significantly differs from fish in other EPUs (not including the MAB, since there is insufficient data). American plaice weight at their mean length also significantly differs across decades for all individuals caught in these EPUs.
+
+```{r plaice all EPUs}
+plaice_model <- lm(log(INDWT) ~ log(LENGTH)*EPU + log(LENGTH)*decade, data = plaice)
+summary(plaice_model)
+
+plaice.conts.epu <- emmeans(plaice_model, ~EPU, by = "LENGTH", data=plaice)
+pairs(plaice.conts.epu)
+
+plaice.conts.dec <- emmeans(plaice_model, ~decade, by = "LENGTH", data=plaice)
+pairs(plaice.conts.dec)
+```
+<br>
+American plaice model for the Gulf of Maine only: the distributions look slightly different by decade. This can be seen much more easily in the colored plot.
+
+```{r plaice gulf of maine}
+plaice_gom <- plaice %>%
+  filter(EPU == "GOM")
+
+ggplot(data = plaice_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  labs(title = "American Plaice in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+
+ggplot(data = plaice_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  facet_wrap(~decade) +
+  labs(title = "American Plaice in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+```
+<br>
+There is only a significant difference in the slope in the 2000s for American plaice in the Gulf of Maine. However, their weight at the mean length differs significantly in each decade.
+
+```{r plaice model gom}
+plaice_gom_model <- lm(log(INDWT) ~ log(LENGTH)*decade, data = plaice_gom)
+summary(plaice_gom_model)
+
+a.by.decade["American Plaice", "1990s"] <- plaice_gom_model$coefficients[1]
+b.by.decade["American Plaice", "1990s"] <- plaice_gom_model$coefficients[2]
+a.by.decade["American Plaice", "2000s"] <- plaice_gom_model$coefficients[1] + plaice_gom_model$coefficients[3]
+b.by.decade["American Plaice", "2000s"] <- plaice_gom_model$coefficients[2] + plaice_gom_model$coefficients[6]
+a.by.decade["American Plaice", "2010s"] <- plaice_gom_model$coefficients[1] + plaice_gom_model$coefficients[4]
+b.by.decade["American Plaice", "2010s"] <- plaice_gom_model$coefficients[2] + plaice_gom_model$coefficients[7]
+a.by.decade["American Plaice", "2020s"] <- plaice_gom_model$coefficients[1] + plaice_gom_model$coefficients[5]
+b.by.decade["American Plaice", "2020s"] <- plaice_gom_model$coefficients[2] + plaice_gom_model$coefficients[8]
+
+plaice.conts.gom <- emmeans(plaice_gom_model, ~decade, by = "LENGTH", data=plaice_gom)
+pairs(plaice.conts.gom)
+```
+<br>
+## Atlantic Herring
+
+The Atlantic herring data was filtered to only contain weights below 0.75, as all weights recorded above were extreme outliers. The trends appear to differ slightly by EPU, especially between the Gulf of Maine and Mid-Atlantic Bight regions. 
+
+```{r herring all EPUs plot}
+herring <- lw_spatial %>%
+  filter(COMNAME == "ATLANTIC HERRING") %>%
+  filter(INDWT < 0.75)
+
+ggplot(data=herring, aes(x=LENGTH, y=INDWT)) +
+  theme_bw() +  
+  labs(title = "Atlantic Herring in the Gulf of Maine: Length vs. Weight",
+         x = "Length", 
+         y = "Weight") +
+  facet_wrap(~EPU) +
+  geom_point(aes(color=decade))
+```
+<br>
+All coefficients are significant in the model that includes EPU and decade as interaction terms. Herring weight at the average length varies significantly across all EPUs and across all decades.
+
+```{r herring all EPUs model}
+herring_model <- lm(log(INDWT) ~ log(LENGTH)*EPU + log(LENGTH)*decade, data = herring)
+summary(herring_model)
+
+herring.conts.epu <- emmeans(herring_model, ~EPU, by = "LENGTH", data=herring)
+pairs(herring.conts.epu)
+
+herring.conts.dec <- emmeans(herring_model, ~decade, by = "LENGTH", data=herring)
+pairs(herring.conts.dec)
+
+```
+<br>
+Model including only herring from the Gulf of Maine: the distributions appear to differ across decades. This can be more clearly observed in the faceted plots. There were no herrings surveyed in the 2020s that were as small as some from the past decades. Many herring were reported as weighing 0.001 in earlier decades - this may be an error, or maybe fewer small herring have been caught in these surveys in more recent years.
+
+```{r herring gom plots}
+herring_gom <- herring %>%
+  filter(EPU == "GOM")
+
+ggplot(data = herring_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  labs(title = "American herring in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+
+ggplot(data = herring_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  facet_wrap(~decade) +
+  labs(title = "American herring in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+```
+<br>
+Model including only Atlantic herring from the Gulf of Maine: all coefficients are very significant. Their weight at the mean length is significantly different across all decades as well.
+
+```{r herring gom model}
+herring_gom_model <- lm(log(INDWT) ~ log(LENGTH)*decade, data = herring_gom)
+summary(herring_gom_model)
+
+a.by.decade["Atlantic Herring", "1990s"] <- herring_gom_model$coefficients[1]
+b.by.decade["Atlantic Herring", "1990s"] <- herring_gom_model$coefficients[2]
+a.by.decade["Atlantic Herring", "2000s"] <- herring_gom_model$coefficients[1] + herring_gom_model$coefficients[3]
+b.by.decade["Atlantic Herring", "2000s"] <- herring_gom_model$coefficients[2] + herring_gom_model$coefficients[6]
+a.by.decade["Atlantic Herring", "2010s"] <- herring_gom_model$coefficients[1] + herring_gom_model$coefficients[4]
+b.by.decade["Atlantic Herring", "2010s"] <- herring_gom_model$coefficients[2] + herring_gom_model$coefficients[7]
+a.by.decade["Atlantic Herring", "2020s"] <- herring_gom_model$coefficients[1] + herring_gom_model$coefficients[5]
+b.by.decade["Atlantic Herring", "2020s"] <- herring_gom_model$coefficients[2] + herring_gom_model$coefficients[8]
+
+herring.conts.gom <- emmeans(herring_gom_model, ~decade, by = "LENGTH", data=herring_gom)
+pairs(herring.conts.gom)
+```
+<br>
+## Spiny Dogfish
+
+The spiny dogfish data follow a similar trend in all EPUs with some slight variation in the extremity of differences by decade.
+
+```{r dogfish all EPUs plot}
+dogfish <- lw_spatial %>%
+  filter(COMNAME == "SPINY DOGFISH")
+
+ggplot(data=dogfish, aes(x=LENGTH, y=INDWT)) +
+  theme_bw() +
+  labs(title = "Spiny Dogfish in the Gulf of Maine: Length vs. Weight",
+         x = "Length", 
+         y = "Weight") +
+  facet_wrap(~EPU) +
+  geom_point(aes(color=decade))
+```
+<br>
+In the all-EPU model for spiny dogfish, all decadal terms are significant. Spiny dogfish in other EPUs have a significantly different mean length than spiny dogfish in the Gulf of Maine. Weight at mean length for all spiny dogfish (all EPUs considered) are also significantly different in each decade.
+```{r dogfish all EPU model}
+dogfish_model <- lm(log(INDWT) ~ log(LENGTH)*EPU + log(LENGTH)*decade, data = dogfish)
+summary(dogfish_model)
+
+dogfish.conts.epu <- emmeans(dogfish_model, ~EPU, by = "LENGTH", data=dogfish)
+pairs(dogfish.conts.epu)
+
+dogfish.conts.dec <- emmeans(dogfish_model, ~decade, by = "LENGTH", data=dogfish)
+pairs(dogfish.conts.dec)
+```
+<br> 
+For spiny dogfish in the Gulf of Maine specifically, we see some variability in each decade. Both plots illustrate this relatively well, but the colored plot likely shows it more clearly.
+```{r dogfish gulf of maine}
+dogfish_gom <- dogfish %>%
+  filter(EPU == "GOM") %>%
+  filter(INDWT < 4)
+
+ggplot(data = dogfish_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  labs(title = "Spiny dogfish in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+
+ggplot(data = dogfish_gom, aes(x = LENGTH, y = INDWT))+
+  geom_point() +
+  facet_wrap(~decade) +
+  labs(title = "Spiny dogfish in the Gulf of Maine: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight") +
+  theme_bw()
+```
+<br>
+In the model considering only spiny dogfish in the Gulf of Maine, we see that all terms are very significant except the 2020s decade. This could be partially due to the fact that less data is being analyzed for the 2020s than the decades prior. Spiny dogfish weight at mean length is significantly different for all decades, however, indicating a shift in the distribution.
+```{r dogfish gom model}
+dogfish_gom_model <- lm(log(INDWT) ~ log(LENGTH)*decade, data = dogfish_gom)
+summary(dogfish_gom_model)
+
+a.by.decade["Spiny Dogfish", "1990s"] <- dogfish_gom_model$coefficients[1]
+b.by.decade["Spiny Dogfish", "1990s"] <- dogfish_gom_model$coefficients[2]
+a.by.decade["Spiny Dogfish", "2000s"] <- dogfish_gom_model$coefficients[1] + dogfish_gom_model$coefficients[3]
+b.by.decade["Spiny Dogfish", "2000s"] <- dogfish_gom_model$coefficients[2] + dogfish_gom_model$coefficients[6]
+a.by.decade["Spiny Dogfish", "2010s"] <- dogfish_gom_model$coefficients[1] + dogfish_gom_model$coefficients[4]
+b.by.decade["Spiny Dogfish", "2010s"] <- dogfish_gom_model$coefficients[2] + dogfish_gom_model$coefficients[7]
+a.by.decade["Spiny Dogfish", "2020s"] <- dogfish_gom_model$coefficients[1] + dogfish_gom_model$coefficients[5]
+b.by.decade["Spiny Dogfish", "2020s"] <- dogfish_gom_model$coefficients[2] + dogfish_gom_model$coefficients[8]
+
+dogfish.conts.gom <- emmeans(dogfish_gom_model, ~decade, by = "LENGTH", data=dogfish_gom)
+pairs(dogfish.conts.gom)
+```
+<br>
+## All-species slope plot
+
+When looking specifically at the Gulf of Maine, this plot looks much different than the plot included in previous analyses where fish from all EPUs were included in the models. Most notably, the trend for American plaice completely changed. 
+```{r all species slope plot}
+b.to.df <- data.frame(
+  Species = c("Cod", "American Plaice", "Atlantic Herring", "Spiny Dogfish"),
+  `1990s` = c(3.119827, 3.321450, 3.101192, 3.086833),
+  `2000s` = c(3.133303, 3.358385, 3.312612, 3.319610),
+  `2010s` = c(3.083302, 3.174635, 3.086706, 3.008332),
+  `2020s` = c(3.072278, 3.146342, 3.109407, 2.989787),
+  stringsAsFactors = FALSE
+)
+
+b.long <- pivot_longer(b.to.df, 
+                      cols = starts_with("X"), 
+                      names_to = "Decade", 
+                      values_to = "Slope")
+
+ggplot(b.long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) By Decade in the Gulf of Maine", 
+       x = "Decade", y = "Slope (b)") +
+  theme_minimal()
+```
+<br> 
+When fish from all EPUs are included, we see this trend:
+
+```{r all species all EPUs prelim 2 slope plot}
+prelim2.b.to.df <- data.frame(
+  Species = c("Cod", "American Plaice", "Atlantic Herring", "Spiny Dogfish"),
+  `1990s` = c(3.075384, 3.281383, 3.048610, 3.124006),
+  `2000s` = c(3.104295, 3.341870, 3.126295, 3.179436),
+  `2010s` = c(3.083302, 3.304652, 3.035329, 3.118535),
+  `2020s` = c(3.072278, 3.310441, 3.087207, 3.011393),
+  stringsAsFactors = FALSE
+)
+
+prelim2.b.long <- pivot_longer(prelim2.b.to.df, 
+                       cols = starts_with("X"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+
+ggplot(prelim2.b.long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) By Decade", x = "Decade", y = "Slope (b)") +
+  theme_minimal()
+```
+<br>
+The decline in the slope for spiny dogfish also appears much less intense when we only look at individuals in the Gulf of Maine.

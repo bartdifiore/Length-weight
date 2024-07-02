@@ -51,7 +51,6 @@ season_counts <- data %>%
 View(season_counts)
 ####
 
-
 coeffs.by.decade.df <- data.frame(row.names = species)
 decades = c('1990s', '2000s', '2010s', '2020s')
 seasons = c('SPRING', 'SUMMER', 'FALL', 'WINTER')
@@ -89,3 +88,30 @@ for (spec in species) {
 }
 
 View (coeffs.by.decade.df)
+print(species)
+
+data2 <- data %>%
+  filter(! (COMNAME == "AMERICAN PLAICE" & INDWT > 4) ) %>%
+  filter(! (COMNAME == "ATLANTIC HERRING" & INDWT > 0.5)) %>%
+  filter(! (COMNAME == "ATLANTIC SHARPNOSE SHARK" & LENGTH > 106)) %>%
+  ## bluntnose stingray - says they can be up to 100 cm. a few observations are close/over
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 50)) %>%
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 10 & LENGTH < 10)) %>%
+  # just some low observations... not sure if this is an error
+  filter(! (COMNAME == "BUTTERFISH" & INDWT <= 0.01 & LENGTH > 12.5)) %>%
+  
+  filter(! (COMNAME == "FOURSPOT FLOUNDER" & LENGTH > 20 & INDWT <= 0.01)) %>%
+  filter(! (COMNAME == "HADDOCK" & LENGTH > 60 & INDWT < 0.3)) %>%
+  filter(! (COMNAME == "LITTLE SKATE" & INDWT > 4)) %>%
+  filter(! (COMNAME == "LONGFIN SQUID" & INDWT > 1)) %>%
+  filter(! (COMNAME == "LONGHORN SCULPIN" & INDWT > 750)) %>%
+  filter(! (COMNAME == "NORTHERN KINGFISH" & INDWT > 1)) %>%
+  filter(! (COMNAME == "NORTHERN SHORTFIN SQUID" & INDWT > 1)) %>%
+  filter(! (COMNAME == "WINTER FLOUNDER" & LENGTH < 20 & INDWT > 3))
+  
+
+current <- data2 %>%
+  filter(COMNAME == "BUTTERFISH")
+ggplot(data=current, aes(x=LENGTH, y=INDWT)) +
+  geom_point() +
+  theme_bw()

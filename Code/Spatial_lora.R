@@ -184,7 +184,7 @@ herring_gom <- herring %>%
 
 ggplot(data = herring_gom, aes(x = LENGTH, y = INDWT))+
   geom_point(aes(color=decade)) +
-  labs(title = "American herring in the Gulf of Maine: Length vs Weight",
+  labs(title = "Atlantic Herring in the Gulf of Maine: Length vs Weight",
        x = "Length",
        y = "Individual Weight") +
   theme_bw()
@@ -192,7 +192,7 @@ ggplot(data = herring_gom, aes(x = LENGTH, y = INDWT))+
 ggplot(data = herring_gom, aes(x = LENGTH, y = INDWT))+
   geom_point() +
   facet_wrap(~decade) +
-  labs(title = "American herring in the Gulf of Maine: Length vs Weight",
+  labs(title = "Atlantic Herring in the Gulf of Maine: Length vs Weight",
        x = "Length",
        y = "Individual Weight") +
   theme_bw()

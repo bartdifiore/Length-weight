@@ -34,7 +34,7 @@ cod_plot <- cod %>%
   labs(title = "Atlantic Cod: Length vs Weight",
        x = "Length",
        y = "Individual Weight")+
-  theme_bw()
+  theme_bw() +
 print(cod_plot)
 
 cod_model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data=cod)

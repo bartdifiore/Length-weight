@@ -1,0 +1,532 @@
+---
+title: "Statistics Week 5"
+output: html_document
+date: "2024-07-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+<br>
+The models in this file are based off of the years being divided up in 10(ish) year increments: 1992-2002, 2003-2013, and 2014-2023. 
+
+```{r setup 2, include=FALSE}
+library(tidyverse) # loading in packages & data
+library(emmeans)
+lw_data <- readRDS('Data/length_weight_epu.rds')
+lw_coeffs <- readRDS('Data/lw_coeffs.rds')
+
+# Table to hold b parameter
+b.by.10yrs <- matrix(nrow=4, ncol=3, byrow=TRUE)
+rownames(b.by.10yrs) <- c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(b.by.10yrs) <- c('1992 - 2002', '2003 - 2013', '2014 - 2023')
+
+# Table to hold log(a) parameter
+a.by.10yrs <- matrix(nrow=4, ncol=3, byrow=TRUE)
+rownames(a.by.10yrs) <- c('Cod', 'American Plaice', 'Atlantic Herring', 'Spiny Dogfish')
+colnames(a.by.10yrs) <- c('1992 - 2002', '2003 - 2013', '2014 - 2023')
+```
+
+## Atlantic Cod
+
+```{r cod plot}
+cod <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC COD') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002")) %>%
+  filter(!is.na(EPU))
+
+### Cod Data Plot
+cod_plot <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  facet_wrap(~EPU)+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_plot)
+```
+<br>
+```{r cod model}
+cod_model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data=cod)
+summary(cod_model)
+a.by.10yrs["Cod", "1992 - 2002"] <- cod_model$coefficients[1] + cod_model$coefficients[5]
+b.by.10yrs["Cod", "1992 - 2002"] <- cod_model$coefficients[2] + cod_model$coefficients[10]
+a.by.10yrs["Cod", "2003 - 2013"] <- cod_model$coefficients[1] + cod_model$coefficients[5] + cod_model$coefficients[3]
+b.by.10yrs["Cod", "2003 - 2013"] <- cod_model$coefficients[2] + cod_model$coefficients[10] + cod_model$coefficients[8]
+a.by.10yrs["Cod", "2014 - 2023"] <- cod_model$coefficients[1] + cod_model$coefficients[5] + cod_model$coefficients[4]
+b.by.10yrs["Cod", "2014 - 2023"] <- cod_model$coefficients[2] + cod_model$coefficients[10] + cod_model$coefficients[9]
+```
+<br>
+Cod predictions plots: one is faceted by decade and one by EPU.
+```{r cod predictions plot}
+# Cod Predictions Plot - facet by EPU
+cod$decade <- factor(cod$decade)
+cod$EPU <- factor(cod$EPU)
+new_cod <- expand.grid(LENGTH = seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100), 
+  decade = levels(cod$decade),
+  EPU = levels(cod$EPU))
+new_cod$decade <- factor(new_cod$decade, levels = levels(cod$decade))
+new_cod$EPU <- factor(new_cod$EPU, levels = levels(cod$EPU))
+predictions <- predict(cod_model, newdata = new_cod, interval = "confidence")
+new_cod$predicted <- exp(predictions[, "fit"])
+new_cod$lower <- exp(predictions[, "lwr"])
+new_cod$upper <- exp(predictions[, "upr"])
+
+ggplot(new_cod, aes(x = LENGTH, y = predicted, color = decade)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = decade), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(title = "Cod Predicted Weights by Length",
+      x = "Length",
+      y = "Individual Weight") +
+  facet_wrap(~EPU)
+
+# Cod Predictions Plot - facet by decade
+cod$decade <- factor(cod$decade)
+cod$EPU <- factor(cod$EPU)
+new_cod <- expand.grid(LENGTH = seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100), 
+  decade = levels(cod$decade),
+  EPU = levels(cod$EPU))
+
+predictions <- predict(cod_model, newdata = new_cod, interval = "confidence")
+
+new_cod$predicted <- exp(predictions[, "fit"])
+new_cod$lower <- exp(predictions[, "lwr"])
+new_cod$upper <- exp(predictions[, "upr"])
+
+ggplot(new_cod, aes(x = LENGTH, y = predicted, color = EPU)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = EPU), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "Cod Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~decade)
+```
+<br>
+Cod weight comparisons at the mean length:
+```{r cod comparisons}
+cod.conts.epu <- emmeans(cod_model, ~EPU, by = "LENGTH", data=cod)
+pairs(cod.conts.epu)
+
+cod.conts.dec <- emmeans(cod_model, ~decade, by = "LENGTH", data=cod)
+pairs(cod.conts.dec)
+```
+
+## American Plaice
+
+```{r plaice plot}
+plaice <- lw_data %>%
+  filter(COMNAME == 'AMERICAN PLAICE') %>%
+  filter(INDWT != 0 & INDWT < 4) %>%
+  mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002")) %>%
+  filter(!is.na(EPU))
+
+### American Plaice Data Plot
+plaice_plot <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  facet_wrap(~EPU)+
+  labs(title = "American Plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_plot)
+```
+<br>
+```{r plaice model}
+plaice_model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data=plaice)
+summary(plaice_model)
+a.by.10yrs["American Plaice", "1992 - 2002"] <- plaice_model$coefficients[1] + plaice_model$coefficients[5]
+b.by.10yrs["American Plaice", "1992 - 2002"] <- plaice_model$coefficients[2] + plaice_model$coefficients[10]
+a.by.10yrs["American Plaice", "2003 - 2013"] <- plaice_model$coefficients[1] + plaice_model$coefficients[5] + plaice_model$coefficients[3]
+b.by.10yrs["American Plaice", "2003 - 2013"] <- plaice_model$coefficients[2] + plaice_model$coefficients[10] + plaice_model$coefficients[8]
+a.by.10yrs["American Plaice", "2014 - 2023"] <- plaice_model$coefficients[1] + plaice_model$coefficients[5] + plaice_model$coefficients[4]
+b.by.10yrs["American Plaice", "2014 - 2023"] <- plaice_model$coefficients[2] + plaice_model$coefficients[10] + plaice_model$coefficients[9]
+```
+<br>
+American plaice predictions plots: one is faceted by decade and one by EPU.
+```{r plaice predictions plot}
+# American Plaice Predictions Plot - facet by EPU
+plaice$decade <- factor(plaice$decade)
+plaice$EPU <- factor(plaice$EPU)
+new_plaice <- expand.grid(LENGTH = seq(min(plaice$LENGTH), max(plaice$LENGTH), length.out = 100), 
+  decade = levels(plaice$decade),
+  EPU = levels(plaice$EPU))
+
+predictions <- predict(plaice_model, newdata = new_plaice, interval = "confidence")
+
+new_plaice$predicted <- exp(predictions[, "fit"])
+new_plaice$lower <- exp(predictions[, "lwr"])
+new_plaice$upper <- exp(predictions[, "upr"])
+
+ggplot(new_plaice, aes(x = LENGTH, y = predicted, color = decade)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = decade), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "American Plaice Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~EPU)
+
+# American Plaice Predictions Plot - facet by decade
+plaice$decade <- factor(plaice$decade)
+plaice$EPU <- factor(plaice$EPU)
+new_plaice <- expand.grid(LENGTH = seq(min(plaice$LENGTH), max(plaice$LENGTH), length.out = 100), 
+  decade = levels(plaice$decade),
+  EPU = levels(plaice$EPU))
+
+predictions <- predict(plaice_model, newdata = new_plaice, interval = "confidence")
+
+new_plaice$predicted <- exp(predictions[, "fit"])
+new_plaice$lower <- exp(predictions[, "lwr"])
+new_plaice$upper <- exp(predictions[, "upr"])
+
+ggplot(new_plaice, aes(x = LENGTH, y = predicted, color = EPU)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = EPU), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "American Plaice Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~decade)
+```
+<br>
+American plaice weight comparisons at the mean length:
+```{r plaice comparisons}
+plaice.conts.epu <- emmeans(plaice_model, ~EPU, by = "LENGTH", data=plaice)
+pairs(plaice.conts.epu)
+
+plaice.conts.dec <- emmeans(plaice_model, ~decade, by = "LENGTH", data=plaice)
+pairs(plaice.conts.dec)
+```
+
+## Atlantic Herring
+
+```{r herring plot}
+herring <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC HERRING') %>%
+  filter(INDWT != 0 & INDWT < 4) %>%
+  mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002")) %>%
+  filter(!is.na(EPU))
+
+### Atlantic Herring Data Plot
+herring_plot <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  facet_wrap(~EPU)+
+  labs(title = "Atlantic Herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_plot)
+```
+<br>
+```{r herring model}
+herring_model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data=herring)
+summary(herring_model)
+a.by.10yrs["Atlantic Herring", "1992 - 2002"] <- herring_model$coefficients[1] + herring_model$coefficients[5]
+b.by.10yrs["Atlantic Herring", "1992 - 2002"] <- herring_model$coefficients[2] + herring_model$coefficients[10]
+a.by.10yrs["Atlantic Herring", "2003 - 2013"] <- herring_model$coefficients[1] + herring_model$coefficients[5] + herring_model$coefficients[3]
+b.by.10yrs["Atlantic Herring", "2003 - 2013"] <- herring_model$coefficients[2] + herring_model$coefficients[10] + herring_model$coefficients[8]
+a.by.10yrs["Atlantic Herring", "2014 - 2023"] <- herring_model$coefficients[1] + herring_model$coefficients[5] + herring_model$coefficients[4]
+b.by.10yrs["Atlantic Herring", "2014 - 2023"] <- herring_model$coefficients[2] + herring_model$coefficients[10] + herring_model$coefficients[9]
+```
+<br>
+Atlantic herring predictions plots: one is faceted by decade and one by EPU.
+```{r herring predictions plot}
+# Atlantic Herring Predictions Plot - facet by EPU
+herring$decade <- factor(herring$decade)
+herring$EPU <- factor(herring$EPU)
+new_herring <- expand.grid(LENGTH = seq(min(herring$LENGTH), max(herring$LENGTH), length.out = 100), decade = levels(herring$decade), EPU = levels(herring$EPU))
+
+predictions <- predict(herring_model, newdata = new_herring, interval = "confidence")
+
+new_herring$predicted <- exp(predictions[, "fit"])
+new_herring$lower <- exp(predictions[, "lwr"])
+new_herring$upper <- exp(predictions[, "upr"])
+
+ggplot(new_herring, aes(x = LENGTH, y = predicted, color = decade)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = decade), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "Atlantic Herring Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~EPU)
+
+# Atlantic Herring Predictions Plot - facet by decade
+herring$decade <- factor(herring$decade)
+herring$EPU <- factor(herring$EPU)
+new_herring <- expand.grid(LENGTH = seq(min(herring$LENGTH), max(herring$LENGTH), length.out = 100), 
+  decade = levels(herring$decade),
+  EPU = levels(herring$EPU))
+
+predictions <- predict(herring_model, newdata = new_herring, interval = "confidence")
+
+new_herring$predicted <- exp(predictions[, "fit"])
+new_herring$lower <- exp(predictions[, "lwr"])
+new_herring$upper <- exp(predictions[, "upr"])
+
+ggplot(new_herring, aes(x = LENGTH, y = predicted, color = EPU)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = EPU), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "Atlantic Herring Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~decade)
+```
+<br>
+Atlantic herring weight comparisons at the mean length:
+```{r herring comparisons}
+herring.conts.epu <- emmeans(herring_model, ~EPU, by = "LENGTH", data=herring)
+pairs(herring.conts.epu)
+
+herring.conts.dec <- emmeans(herring_model, ~decade, by = "LENGTH", data=herring)
+pairs(herring.conts.dec)
+```
+
+## Spiny Dogfish
+
+```{r dogfish plot}
+dogfish <- lw_data %>%
+  filter(COMNAME == 'SPINY DOGFISH') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002")) %>%
+  filter(!is.na(EPU))
+
+### Spiny dogfish Data Plot
+dogfish_plot <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=decade)) +
+  facet_wrap(~EPU)+
+  labs(title = "Spiny Dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_plot)
+```
+<br>
+```{r dogfish model}
+dogfish_model <- lm(log(INDWT) ~ log(LENGTH)*decade + log(LENGTH)*EPU, data=dogfish)
+summary(dogfish_model)
+a.by.10yrs["Spiny Dogfish", "1992 - 2002"] <- dogfish_model$coefficients[1] + dogfish_model$coefficients[5]
+b.by.10yrs["Spiny Dogfish", "1992 - 2002"] <- dogfish_model$coefficients[2] + dogfish_model$coefficients[10]
+a.by.10yrs["Spiny Dogfish", "2003 - 2013"] <- dogfish_model$coefficients[1] + dogfish_model$coefficients[5] + dogfish_model$coefficients[3]
+b.by.10yrs["Spiny Dogfish", "2003 - 2013"] <- dogfish_model$coefficients[2] + dogfish_model$coefficients[10] + dogfish_model$coefficients[8]
+a.by.10yrs["Spiny Dogfish", "2014 - 2023"] <- dogfish_model$coefficients[1] + dogfish_model$coefficients[5] + dogfish_model$coefficients[4]
+b.by.10yrs["Spiny Dogfish", "2014 - 2023"] <- dogfish_model$coefficients[2] + dogfish_model$coefficients[10] + dogfish_model$coefficients[9]
+```
+<br>
+Spiny Dogfish predictions plots: one is faceted by decade and one by EPU.
+```{r dogfish predictions plot}
+# Spiny dogfish Predictions Plot - facet by EPU
+dogfish$decade <- factor(dogfish$decade)
+dogfish$EPU <- factor(dogfish$EPU)
+new_dogfish <- expand.grid(LENGTH = seq(min(dogfish$LENGTH), max(dogfish$LENGTH), length.out = 100), 
+  decade = levels(dogfish$decade),
+  EPU = levels(dogfish$EPU))
+
+predictions <- predict(dogfish_model, newdata = new_dogfish, interval = "confidence")
+
+new_dogfish$predicted <- exp(predictions[, "fit"])
+new_dogfish$lower <- exp(predictions[, "lwr"])
+new_dogfish$upper <- exp(predictions[, "upr"])
+
+ggplot(new_dogfish, aes(x = LENGTH, y = predicted, color = decade)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = decade), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "Spiny Dogfish Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~EPU)
+
+# Spiny Dogfish Predictions Plot - facet by decade
+dogfish$decade <- factor(dogfish$decade)
+dogfish$EPU <- factor(dogfish$EPU)
+new_dogfish <- expand.grid(LENGTH = seq(min(dogfish$LENGTH), max(dogfish$LENGTH), length.out = 100), 
+  decade = levels(dogfish$decade),
+  EPU = levels(dogfish$EPU))
+
+predictions <- predict(dogfish_model, newdata = new_dogfish, interval = "confidence")
+
+new_dogfish$predicted <- exp(predictions[, "fit"])
+new_dogfish$lower <- exp(predictions[, "lwr"])
+new_dogfish$upper <- exp(predictions[, "upr"])
+
+ggplot(new_dogfish, aes(x = LENGTH, y = predicted, color = EPU)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = EPU), alpha = 0.1) +
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_light() +
+  labs(
+    title = "Spiny Dogfish Predicted Weights by Length",
+    x = "Length",
+    y = "Individual Weight"
+  ) +
+  facet_wrap(~decade)
+```
+<br>
+Spiny dogfish weight comparisons at the mean length:
+```{r dogfish comparisons}
+dogfish.conts.epu <- emmeans(dogfish_model, ~EPU, by = "LENGTH", data=dogfish)
+pairs(dogfish.conts.epu)
+
+dogfish.conts.dec <- emmeans(dogfish_model, ~decade, by = "LENGTH", data=dogfish)
+pairs(dogfish.conts.dec)
+```
+
+## Slope Changes for Gulf of Maine Fish
+
+```{r slope changes}
+b.by.10yrs.df <- as.data.frame(b.by.10yrs, stringsAsFactors = FALSE)
+b.by.10yrs.df$Species <- rownames(b.by.10yrs)
+
+b.by.10yrs.df.long <- pivot_longer(b.by.10yrs.df, 
+                            cols = c("1992 - 2002", "2003 - 2013", "2014 - 2023"), 
+                            names_to = "Decade", 
+                            values_to = "Slope")
+
+ggplot(b.by.10yrs.df.long, aes(x = Decade, y = Slope, group = Species, color = Species)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) in the Gulf of Maine", 
+       x = "Decade", 
+       y = "Slope (b)") +
+  theme_minimal()
+```
+
+## All Species Coefficients by Season
+
+On par with Wigley's work:
+
+```{r coeffs, message=FALSE}
+unique_comname <- unique(lw_data$COMNAME)
+unique_comname <- na.omit(unique_comname)
+
+data <- lw_data %>%
+  filter(!is.na(LENGTH) & !is.na(INDWT) & !is.na(COMNAME)) %>%
+  mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002"))
+
+grouped_data <- data %>%
+  group_by(COMNAME, decade) %>%
+  summarise(count = n())
+
+filtered_groups <- grouped_data %>%
+  filter(count >= 5) %>%
+  ungroup()
+
+unique_species <- unique(filtered_groups$COMNAME)
+species <- c()
+
+for (spec in unique_species) {
+  spec_decs <- filtered_groups %>%
+    filter(COMNAME == spec)
+  if (nrow(spec_decs) == 3) {
+    species <- c(species, spec)
+  }
+}
+
+season_counts <- data %>%
+  filter(COMNAME %in% species) %>% 
+  filter(!is.na(SEASON)) %>%             
+  group_by(COMNAME, decade, SEASON) %>%
+  summarise(count = n()) %>%
+  filter(count >= 5) %>%
+  ungroup()
+
+####
+
+coeffs.by.decade.df <- data.frame(row.names = species)
+decades = c('1992 - 2002', '2003 - 2013', '2014 - 2023')
+seasons = c('SPRING', 'FALL')
+
+# filtering out large outliers
+data <- data %>%
+  filter(! (COMNAME == "AMERICAN PLAICE" & INDWT > 4) ) %>%
+  filter(! (COMNAME == "ATLANTIC HERRING" & INDWT > 0.5)) %>%
+  filter(! (COMNAME == "ATLANTIC SHARPNOSE SHARK" & LENGTH > 106)) %>%
+  ## bluntnose stingray - says they can be up to 100 cm. a few observations are close/over
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 50)) %>%
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 10 & LENGTH < 10)) %>%
+  # just some low observations... not sure if these are errors
+  filter(! (COMNAME == "BUTTERFISH" & INDWT <= 0.01 & LENGTH > 12.5)) %>%
+  filter(! (COMNAME == "LITTLE SKATE" & INDWT > 4)) %>%
+  filter(! (COMNAME == "LONGFIN SQUID" & INDWT > 1)) %>%
+  filter(! (COMNAME == "LONGHORN SCULPIN" & INDWT > 750)) %>%
+  filter(! (COMNAME == "NORTHERN KINGFISH" & INDWT > 1)) %>%
+  filter(! (COMNAME == "NORTHERN SHORTFIN SQUID" & INDWT > 1)) %>%
+  filter(! (COMNAME == "WINTER FLOUNDER" & LENGTH < 20 & INDWT > 3))
+
+for (d in decades) {
+  for (s in seasons) {
+    coeffs.by.decade.df[[paste0("B.", s, ".", d)]] <- NA
+    coeffs.by.decade.df[[paste0("A.", s, ".", d)]] <- NA
+  }
+}
+
+for (spec in species) {
+  spec_data <- lw_data %>%
+    filter(COMNAME == spec) %>%
+    filter(INDWT != 0) %>%
+    mutate(decade = case_when(YEAR >= 2014 ~ "2014 - 2023",
+                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
+                            YEAR <= 2002 ~ "1992 - 2002"))
+  
+  for (dec in decades) {
+    for (szn in seasons) {
+      season_data <- spec_data %>%
+        filter(SEASON == szn & decade == dec)
+      if (nrow(season_data) >= 5) {
+        spec.szn.lm <- lm(log(INDWT) ~ log(LENGTH), data = season_data)
+        coeffs.by.decade.df[spec, paste0("B.", szn, ".", dec)] <- coef(spec.szn.lm)[2]
+        coeffs.by.decade.df[spec, paste0("A.", szn, ".", dec)] <- coef(spec.szn.lm)[1]
+      }
+    }
+  }
+}
+
+print(coeffs.by.decade.df)
+```
+

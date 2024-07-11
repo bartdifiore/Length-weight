@@ -1,0 +1,516 @@
+---
+title: "Preliminary Plots 3"
+output: html_document
+date: "2024-06-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load, include=FALSE}
+library(tidyverse)
+lw_data <- readRDS('Desktop/GMRI/data/bottomTrawlSurvey_indLengthWeight.rds')
+```
+
+## Splitting by Season
+<br>
+This analysis groups fish by season as well as decade to determine significance.
+<br>
+## Atlantic Cod
+<br>
+Original Cod data:
+<br>
+```{r cod plots, echo=FALSE}
+cod <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC COD') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+cod_orig <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_orig)
+
+cod_color <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_color)
+
+cod_split <- cod %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic Cod: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(cod_split)
+```
+<br>
+Transformed Cod data:
+<br>
+```{r cod log plots, echo=FALSE}
+cod_log <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC COD') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+cod_log_orig <- cod_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_log_orig)
+
+cod_log_color <- cod_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_log_color)
+
+cod_log_split <- cod_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic Cod: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(cod_log_split)
+```
+<br>
+
+Cod table by decade and season and linear model:
+
+```{r cod model, echo=FALSE}
+cod.b.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(cod.b.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(cod.b.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+cod.a.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(cod.a.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(cod.a.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+decades = c("1990s", "2000s", "2010s", "2020s")
+seasons = c("SUMMER", "SPRING", "AUTUMN", "WINTER")
+for (dec in decades) {
+  for (szn in seasons) {
+    data <- cod %>%
+      filter(decade == dec & SEASON == szn)
+    if (nrow(data) > 5) {
+    lin.mod <- lm(log(INDWT) ~ log(LENGTH), data)
+    cod.b.by.dec[szn, dec] <- summary(lin.mod)$coefficients[2,1]
+    cod.a.by.dec[szn, dec] <- summary(lin.mod)$coefficients[1,1]
+    }
+  }
+}
+print(cod.b.by.dec)
+
+bcod_df <- as.data.frame(cod.b.by.dec["SPRING", , drop = FALSE])
+bcod_long <- pivot_longer(bcod_df, 
+                       cols = c("1990s", "2000s", "2010s", "2020s"), 
+                       names_to = "Decade", 
+                       values_to = "Slope")
+ggplot(bcod_long, aes(x = Decade, y = Slope, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Slope of Relationship Between log(Length) and log(Weight) for Cod in Spring",
+       x = "Decade",
+       y = "Slope (b)") +
+  theme_minimal()
+
+cod_model <- lm(log(cod$INDWT) ~ log(cod$LENGTH)*cod$decade + log(cod$LENGTH)*cod$SEASON)
+summary(cod_model)
+```
+
+<br>
+
+## American Plaice
+
+```{r plaice plots, echo=FALSE}
+plaice <- lw_data %>%
+  filter(COMNAME == 'AMERICAN PLAICE') %>%
+  filter(INDWT != 0 & INDWT < 4) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+plaice_orig <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_orig)
+
+plaice_color <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_color)
+
+plaice_split <- plaice %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic plaice: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(plaice_split)
+```
+<br>
+Transformed American plaice data:
+<br>
+```{r plaice log plots, echo=FALSE}
+Plaice_log <- lw_data %>%
+  filter(COMNAME == 'AMERICAN PLAICE') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+Plaice_log_orig <- Plaice_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(Plaice_log_orig)
+
+Plaice_log_color <- Plaice_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(Plaice_log_color)
+
+Plaice_log_split <- Plaice_log %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "American Plaice: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(Plaice_log_split)
+```
+<br>
+
+American plaice table by decade and season and linear model:
+
+```{r plaice model, echo=FALSE}
+plaice.b.by.dec <- matrix(nrow=3, ncol=4, byrow=TRUE)
+rownames(plaice.b.by.dec) <- 
+  c('SUMMER', 'WINTER', 'SPRING')
+colnames(plaice.b.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+plaice.a.by.dec <- matrix(nrow=3, ncol=4, byrow=TRUE)
+rownames(plaice.a.by.dec) <- 
+  c('SUMMER', 'WINTER', 'SPRING')
+colnames(plaice.a.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+decades = c("1990s", "2000s", "2010s", "2020s")
+seasons = c("SUMMER", "SPRING", "AUTUMN", "WINTER")
+for (dec in decades) {
+  for (szn in seasons) {
+    data <- plaice %>%
+      filter(decade == dec & SEASON == szn)
+    if (nrow(data) > 5) {
+    lin.mod <- lm(log(INDWT) ~ log(LENGTH), data)
+    plaice.b.by.dec[szn, dec] <- summary(lin.mod)$coefficients[2,1]
+    plaice.a.by.dec[szn, dec] <- summary(lin.mod)$coefficients[1,1]
+    }
+  }
+}
+print(plaice.b.by.dec)
+
+plaice_model <- lm(log(plaice$INDWT) ~ log(plaice$LENGTH)*plaice$decade + log(plaice$LENGTH)*plaice$SEASON)
+summary(plaice_model)
+```
+<br>
+## Atlantic Herring
+<br>
+Original Atlantic herring data plots:
+<br>
+```{r herring plots, echo=FALSE}
+herring <- lw_data %>%
+  filter(COMNAME == 'ATLANTIC HERRING') %>%
+  filter(INDWT > 0 & INDWT < 0.5) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+herring_orig <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_orig)
+
+herring_color <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_color)
+
+herring_split <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic herring: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(herring_split)
+```
+<br>
+Transformed Atlantic herring data:
+<br>
+```{r herring log plots, echo=FALSE}
+herring_log_orig <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_log_orig)
+
+herring_log_color <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_log_color)
+
+herring_log_split <- herring %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic herring: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(herring_log_split)
+```
+<br>
+
+Atlantic herring table by decade and season and linear model:
+
+```{r herring model, echo=FALSE}
+herring.b.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(herring.b.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(herring.b.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+herring.a.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(herring.a.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(herring.a.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+decades = c("1990s", "2000s", "2010s", "2020s")
+seasons = c("SUMMER", "SPRING", "AUTUMN", "WINTER")
+for (dec in decades) {
+  for (szn in seasons) {
+    data <- herring %>%
+      filter(decade == dec & SEASON == szn)
+    if (nrow(data) > 5) {
+    lin.mod <- lm(log(INDWT) ~ log(LENGTH), data)
+    herring.b.by.dec[szn, dec] <- summary(lin.mod)$coefficients[2,1]
+    herring.a.by.dec[szn, dec] <- summary(lin.mod)$coefficients[1,1]
+    }
+  }
+}
+print(herring.b.by.dec)
+
+herring_model <- lm(log(herring$INDWT) ~ log(herring$LENGTH)*herring$decade + log(herring$LENGTH)*herring$SEASON)
+summary(herring_model)
+```
+
+<br>
+
+## Spiny Dogfish
+
+```{r dogfish plots, echo=FALSE}
+dogfish <- lw_data %>%
+  filter(COMNAME == 'SPINY DOGFISH') %>%
+  filter(INDWT != 0) %>%
+  mutate(decade = case_when(YEAR >= 2020 ~ "2020s",
+                            YEAR >= 2010 & YEAR < 2020 ~ "2010s",
+                            YEAR >= 2000 & YEAR < 2010 ~ "2000s", 
+                            YEAR < 2000 ~ "1990s"))
+
+dogfish_orig <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Atlantic dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_orig)
+
+dogfish_color <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Atlantic dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_color)
+
+dogfish_split <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Atlantic dogfish: Length vs Weight",
+       x = "Length",
+       y = "Individual Weight")+
+  theme_bw()
+print(dogfish_split)
+```
+<br>
+Transformed dogfish data:
+<br>
+```{r dogfish log plots, echo=FALSE}
+dogfish_log_orig <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  labs(title = "Spiny dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_log_orig)
+
+dogfish_log_color <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color=SEASON))+
+  facet_wrap(~decade)+
+  labs(title = "Spiny dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_log_color)
+
+dogfish_log_split <- dogfish %>%
+  ggplot(aes(x = LENGTH, y = INDWT))+
+  geom_point()+
+  facet_wrap(~SEASON)+
+  labs(title = "Spiny dogfish: log(Length) vs log(Weight)",
+       x = "log(Length)",
+       y = "log(Individual Weight)")+
+  theme_bw()+
+  scale_x_log10()+
+  scale_y_log10()
+print(dogfish_log_split)
+```
+<br>
+
+Spiny dogfish table by decade and season and linear model:
+
+```{r dogfish model, echo=FALSE}
+dogfish.b.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(dogfish.b.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(dogfish.b.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+dogfish.a.by.dec <- matrix(nrow=4, ncol=4, byrow=TRUE)
+rownames(dogfish.a.by.dec) <- 
+  c('SUMMER', 'FALL', 'WINTER', 'SPRING')
+colnames(dogfish.a.by.dec) <- 
+  c('1990s', '2000s', '2010s', '2020s')
+
+decades = c("1990s", "2000s", "2010s", "2020s")
+seasons = c("SUMMER", "SPRING", "AUTUMN", "WINTER")
+for (dec in decades) {
+  for (szn in seasons) {
+    data <- dogfish %>%
+      filter(decade == dec & SEASON == szn)
+    if (nrow(data) > 5) {
+    lin.mod <- lm(log(INDWT) ~ log(LENGTH), data)
+    dogfish.b.by.dec[szn, dec] <- summary(lin.mod)$coefficients[2,1]
+    dogfish.a.by.dec[szn, dec] <- summary(lin.mod)$coefficients[1,1]
+    }
+  }
+}
+print(dogfish.b.by.dec)
+
+dogfish_model <- lm(log(dogfish$INDWT) ~ log(dogfish$LENGTH)*dogfish$decade + log(dogfish$LENGTH)*dogfish$SEASON)
+summary(dogfish_model)
+```

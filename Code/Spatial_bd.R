@@ -59,7 +59,7 @@ ggsave("map_of_points.png")
 
 lw_out <- lw_spatial %>% 
   st_drop_geometry()
-write.csv(lw_out, file = "Data/length_weight_epu.csv", quote = F, row.names = F)  
+write_rds(lw_out, file = "Data/length_weight_epu.rds", compress = "gz")  
   
   
   

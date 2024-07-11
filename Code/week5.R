@@ -76,11 +76,37 @@ ggplot(new_cod, aes(x = LENGTH, y = predicted, color = decade)) +
   ) +
   facet_wrap(~EPU)
 
-cod.conts.epu <- emmeans(cod_model, ~EPU, by = "LENGTH", data=cod)
-pairs(cod.conts.epu)
+# cod.conts.epu <- emmeans(cod_model, ~EPU, by = "LENGTH", data=cod)
+# pairs(cod.conts.epu)
+# 
+# cod.conts.dec <- emmeans(cod_model, ~decade, by = "LENGTH", data=cod)
+# pairs(cod.conts.dec)
 
-cod.conts.dec <- emmeans(cod_model, ~decade, by = "LENGTH", data=cod)
-pairs(cod.conts.dec)
+em1 <- emtrends(cod_model, "EPU", "log(LENGTH)", data = cod)
+pairs(em1)
+
+
+cod_model2 <- lm(log(INDWT) ~ log(LENGTH)*decade*EPU, data=cod)
+summary(cod_model2)
+# cod_model3 <- glm(INDWT ~ log(LENGTH)*decade*EPU, data = cod, family = gaussian(link = "log"))
+# summary(cod_model3)
+em3 <- emtrends(cod_model2, ~EPU + decade, "log(LENGTH)", data = cod)
+# pairs(em3)
+pairs(em3, simple = "decade")
+
+vec_size <- seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100)
+
+predictions <- as.data.frame(ggeffects::ggpredict(cod_model2, terms = c("LENGTH [vec_size]", "decade",  "EPU")))
+
+ggplot(cod, aes(x = LENGTH, y = INDWT))+
+  geom_point(aes(color = decade), alpha = 0.1)+
+  geom_ribbon(data = predictions, aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, group = group), alpha = 0.1)+
+  geom_line(data = predictions, aes(x = x, y = predicted, color = group), linewidth = 1)+
+  facet_wrap(~facet)+
+  # scale_x_log10()+
+  # scale_y_log10()+
+  theme_classic()
+
 
 # -----------------------------------------------------------------------------
 # American Plaice - Periodic Fish (Pt 2)

@@ -670,5 +670,8 @@ ssa_res
 
 tibble(cond_s=cond_sens,ssa=ssa_res)%>%
   ggplot(aes(x=factor(cond_s),y=ssa))+
-  geom_col()
+  geom_col()+
+  labs(title="Sensitivity Analysis: Condition",
+       x="Condition Sensitivity Factor",
+       y="Spawning Stock Abundance (SSA)")
 

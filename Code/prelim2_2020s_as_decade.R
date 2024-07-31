@@ -109,16 +109,6 @@ prelim2.b["Cod", "2010s"] <- cod_model$coefficients[2] + cod_model$coefficients[
 prelim2.a["Cod", "2020s"] <- cod_model$coefficients[1] + cod_model$coefficients[5]
 prelim2.b["Cod", "2020s"] <- cod_model$coefficients[2] + cod_model$coefficients[8]
 
-###### FROM BART - FIGURE OUT
-###### FROM BART - FIGURE OUT
-# library(emmeans)
-# conts <- emmeans(cod_model, ~decade, by = LENGTH)
-# pairs(conts)
-# summary(cod$LENGTH)
-# emmeans(mod1b, ~bait_type, condition = "response")
-###### FROM BART - FIGURE OUT
-###### FROM BART - FIGURE OUT
-
 ### Cod Predictions Plot
 new_cod = expand.grid(LENGTH = seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100), decade = c("1990s", "2000s", "2010s", "2020s")) 
 new_cod$predicted <- exp(predict(cod_model, newdata = new_cod, type = "response")) 

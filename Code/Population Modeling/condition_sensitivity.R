@@ -128,8 +128,7 @@ for(i in 1:10){
   ssa_res<-c(ssa_res,x)
 }
 ssa_res
-min(ssa_res)
-max(ssa_res)
+ssa_res[9] / ssa_res[10]
 
 tibble(cond_s=cond_sens,ssa=ssa_res)%>%
   ggplot(aes(x=factor(cond_s),y=ssa))+
@@ -150,8 +149,6 @@ for(i in 1:10){
   pop_res<-c(pop_res,x)
 }
 pop_res
-min(pop_res)
-max(pop_res)
 
 tibble(cond_s=cond_sens,pop=pop_res)%>%
   ggplot(aes(x=factor(cond_s),y=pop))+

@@ -58,3 +58,4 @@ ggplot()+
        y = "Total Population") +
   scale_fill_manual(values = c("pop_min" = "firebrick4", "pop_max" = "steelblue4"),
                     labels = c("Maximum Population", "Minimum Population"))
+ 

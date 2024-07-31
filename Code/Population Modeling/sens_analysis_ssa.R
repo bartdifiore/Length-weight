@@ -5,8 +5,8 @@ library(tidyverse)
 
 data2 <- data.frame(ssa_min = c(1482.944, 7.06E-51, 9.89E-73, 35101.45, 18.47595),
                     ssa_max = c(123738.5, 92610.59, 92610.59, 123738.5, 123738.5234),
-                    parameter = c("condition", "condsurv", "cond&condsurv", 
-                    "fecundity", "recruitment"))
+                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-Way", 
+                    "Fecundity", "Recruitment"))
 data2$difference <- data2$ssa_max - data2$ssa_min
 
 # sort difference, greatest to least
@@ -58,3 +58,4 @@ ggplot()+
        y = "Spawning Stock Abundance") +
   scale_fill_manual(values = c("ssa_min" = "firebrick4", "ssa_max" = "steelblue4"),
                     labels = c("Maximum SSA", "Minimum SSA"))
+

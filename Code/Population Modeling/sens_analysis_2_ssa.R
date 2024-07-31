@@ -5,8 +5,8 @@ library(tidyverse)
 
 data2 <- data.frame(ssa_0.9 = c(41762.03, 59502.03, 37273.02, 54180.15, 39971.56),
                     ssa_1 = c(123738.5, 92610.59, 92610.59, 123738.5, 123738.5234),
-                    parameter = c("condition", "condsurv", "cond&condsurv", 
-                                  "fecundity", "recruitment"))
+                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-Way", 
+                                  "Fecundity", "Recruitment"))
 data2$difference <- data2$ssa_1 - data2$ssa_0.9
 
 # sort difference, greatest to least
@@ -55,7 +55,7 @@ ggplot()+
   scale_x_continuous(breaks = 1:length(order.parameters), 
                      labels = order.parameters) +
   coord_flip() +
-  labs(title = "Sensitivity Analysis from 100% to 90% Tornado Plot: SSA", 
+  labs(title = "Sensitivity Analysis Tornado Plot: SSA", 
        y = "Spawning Stock Abundance") +
   scale_fill_manual(values = c("ssa_1" = "firebrick4", "ssa_0.9" = "steelblue4"),
                     labels = c("90% Sensitivity", "100% Sensitivity"))

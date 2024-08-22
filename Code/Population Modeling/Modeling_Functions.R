@@ -8,7 +8,9 @@ density <- tibble(N=c(0,50000,100000,150000,200000,250000,300000,350000,400000,4
 totdensity<-nls(s1~1/(1+exp((c*N)+b)),data=density,start=list(c=0.00001,b=-3.05))
 tot_dens<-summary(totdensity)
 c<-tot_dens$coefficients[1,1]
+c
 b<-tot_dens$coefficients[2,1]
+b
 N_seq<-seq(1,500000,100)
 s<-1/(1+exp((c*N_seq)+b))
 predicted_data <- tibble(N = N_seq, s = s)
@@ -17,7 +19,8 @@ ggplot() +
   labs(title = "Density-Dependent Survival Function",
        x = "N (total population)",
        y = "Survival Multiplier") +
-  theme_minimal()
+  theme_minimal() -> density_fxn
+ggsave(filename="DensityFunction.png", plot=density_fxn, width=6, height=5)
 
 # Condition & Total Eggs
 dita_c <- tibble(condition=c(0,0.3,0.6,1,1.3,1.6,2),totaleggs=c(1000,8000,16000,25000,40000,70000,100000))
@@ -32,8 +35,8 @@ ggplot() +
   labs(title = "Condition and Total Eggs Function",
        x = "Condition",
        y = "Total Eggs") +
-  theme_minimal()
-
+  theme_minimal() -> condition_fxn
+ggsave(filename="ConditionFunction.png", plot=condition_fxn, width=6, height=5)
 
 # Recruitment Function
 dita_r <- tibble(totaleggs=c(1000,8000,16000,25000,40000,70000,100000),age1=c(1,2.5,4,7,10,10.2,10.3))
@@ -48,7 +51,8 @@ ggplot() +
   labs(title = "Recruitment Function",
        x = "Total Eggs",
        y = "Number of Age 1 Individuals") +
-  theme_minimal()
+  theme_minimal() -> recruitment_fxn
+ggsave(filename="RecruitmentFunction.png", plot=recruitment_fxn, width=6, height=5)
 
 # Condition Affects Survival
 condsurv <- function(x, x0, r, k, off){
@@ -68,4 +72,5 @@ ggplot(cond_surv_data, aes(x = condition, y = survival_probability)) +
   labs(title = "Condition Affects Survival Function",
        x = "Condition",
        y = "Survival Probability Multiplier") +
-  theme_minimal()
+  theme_minimal() -> condsurv_fxn
+ggsave(filename="CondSurvFunction.png", plot=condsurv_fxn, width=6, height=5)

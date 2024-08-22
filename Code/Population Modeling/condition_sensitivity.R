@@ -92,7 +92,7 @@ for(j in 1:length(cond_sens)){
 # Plotting some simulations:
 
 # simulation 1: condition x 0.1
-sens_res[[1]]%>%
+cond.1 <- sens_res[[1]]%>%
   filter(timestep<101)%>%
   group_by(timestep)%>%
   mutate(numint=as.integer(num))%>%
@@ -100,12 +100,18 @@ sens_res[[1]]%>%
   geom_col(width=1,color="gray50")+
   facet_grid(rows=vars(age),scales="free_y")+
   scale_fill_manual(values=c("#1b9e77","#d95f02","#7570b3","#e7298a"))+
-  labs(x="timestep",y="number of individuals")+
+  labs(x="Timestep",y="Number of Individuals",
+       title = "Population Over Time with Condition x 0.1")+
   theme_bw()+
-  theme(legend.position="none",strip.background=element_blank(),strip.text.y=element_text(angle=0))
+  theme(legend.position="none",
+        strip.background=element_blank(),
+        strip.text.y=element_text(angle=0),
+        text=element_text(size=15))
+cond.1
+ggsave(filename="Cond01.png", plot=cond.1, height=6, width=10)
 
 # simulation 10: condition x 1
-sens_res[[10]]%>%
+cond1 <- sens_res[[10]]%>%
   filter(timestep<101)%>%
   group_by(timestep)%>%
   mutate(numint=as.integer(num))%>%
@@ -113,9 +119,15 @@ sens_res[[10]]%>%
   geom_col(width=1,color="gray50")+
   facet_grid(rows=vars(age),scales="free_y")+
   scale_fill_manual(values=c("#1b9e77","#d95f02","#7570b3","#e7298a"))+
-  labs(x="timestep",y="number of individuals")+
+  labs(x="Timestep",y="Number of Individuals",
+       title = "Population Over Time with Condition x 1")+
   theme_bw()+
-  theme(legend.position="none",strip.background=element_blank(),strip.text.y=element_text(angle=0))
+  theme(legend.position="none",
+        strip.background=element_blank(),
+        strip.text.y=element_text(angle=0),
+        text=element_text(size=15))
+ggsave(filename="Cond1.png", plot=cond1, height=6, width=10)
+
 
 # Calculate spawning stock abundance at time step 100 for all sensitivities
 ssa_res<-c()
@@ -128,15 +140,17 @@ for(i in 1:10){
   ssa_res<-c(ssa_res,x)
 }
 ssa_res
-ssa_res[9] / ssa_res[10]
+ssa_res[10] / ssa_res[9]
 
-tibble(cond_s=cond_sens,ssa=ssa_res)%>%
-  ggplot(aes(x=factor(cond_s),y=ssa))+
+ssa_dat <- tibble(cond_s=cond_sens,ssa=ssa_res)
+ggplot(ssa_dat, aes(x=factor(cond_s),y=ssa))+
   geom_col()+
   labs(title="Condition Sensitivity Analysis: SSA",
        x="Condition Sensitivity Factor",
        y="Spawning Stock Abundance (SSA)")+
-  theme_bw()
+  theme_bw() +
+  theme(text=element_text(size=15)) -> ssa_plot
+ggsave(filename="CondSensSSA.png", plot=ssa_plot, height=6, width=10)
 
 # Calculate total population at time step 100 for all sensitivities
 pop_res<-c()
@@ -148,12 +162,15 @@ for(i in 1:10){
     sum()->x
   pop_res<-c(pop_res,x)
 }
-pop_res
+pop_res[10]/pop_res[9]
 
-tibble(cond_s=cond_sens,pop=pop_res)%>%
-  ggplot(aes(x=factor(cond_s),y=pop))+
+pop_dat <- tibble(cond_s=cond_sens,pop=pop_res)
+ggplot(pop_dat, aes(x=factor(cond_s),y=pop))+
   geom_col()+
   labs(title="Condition Sensitivity Analysis: Total Population",
        x="Condition Sensitivity Factor",
        y="Total Population")+
-  theme_bw()
+  theme_bw()  +
+  theme(text=element_text(size=15)) -> pop_plot
+pop_plot
+ggsave(filename="CondSensPop.png", plot=pop_plot, height=6, width=10)

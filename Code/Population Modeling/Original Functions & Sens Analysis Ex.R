@@ -146,6 +146,7 @@ algo<-nls(age1~alpha*(totaleggs^beta),data=dita,start=list(alpha=1,beta=1))
 
 # here are our alpha and beta parameters
 algo_param<-summary(algo)
+algo_param
 
 # using our new parameters, lets build the recruitment function
 alphaz<-algo_param$coefficients[1,1]
@@ -624,10 +625,17 @@ sens_res[[1]]%>%
   ggplot(aes(x=timestep,y=numint,fill=age))+
   geom_col(width=1,color="gray50")+
   facet_grid(rows=vars(age),scales="free_y")+
-  scale_fill_manual(values=c("#1b9e77","#d95f02","#7570b3","#e7298a"))+
-  labs(x="timestep",y="number of individuals")+
+  scale_fill_manual(values=c("orangered2", "yellowgreen", "steelblue2", "purple"))+
+  labs(title="Population Dynamics with Condition x 0.1",
+       x="Timestep (Year)",
+       y="Number of Individuals")+
   theme_bw()+
-  theme(legend.position="none",strip.background=element_blank(),strip.text.y=element_text(angle=0))
+  theme(legend.position="none",
+        strip.background=element_blank(),
+        strip.text.y=element_text(angle=0),
+        text=element_text(size=15)) -> cond.1
+cond.1
+ggsave(filename="CondSim1.png", plot=cond.1, width=10, height=6)
 
 # simulation 10: condition x 1
 sens_res[[10]]%>%
@@ -636,14 +644,20 @@ sens_res[[10]]%>%
   mutate(numint=as.integer(num))%>%
   ggplot(aes(x=timestep,y=numint,fill=age))+
   geom_col(width=1,color="gray50")+
-  facet_grid(rows=vars(age),scales="free_y")+
-  scale_fill_manual(values=c("#1b9e77","#d95f02","#7570b3","#e7298a"))+
-  labs(x="timestep",y="number of individuals")+
+  facet_grid(rows=vars(age),scale="free_y")+
+  scale_fill_manual(values=c("orangered2", "yellowgreen", "steelblue2", "purple"))+
+  labs(title="Population Dynamics with Condition x 1",
+       x="Timestep (Year)",
+       y="Number of Individuals")+
   theme_bw()+
-  theme(legend.position="none",strip.background=element_blank(),strip.text.y=element_text(angle=0))
+  theme(legend.position="none",
+        strip.background=element_blank(),
+        strip.text.y=element_text(angle=0),
+        text=element_text(size=15)) -> cond1
+cond1
+ggsave(filename="CondSim2.png", plot=cond1, width=10, height=6)
 
-# calculate spawning stock abundance at timestep 100
-
+# calculate spawning stock abundance at time-step 100
 sens_res[[1]]%>%
   filter(age%in%c("age3","age4+")&timestep==100)%>%
   select(num)%>%
@@ -665,8 +679,18 @@ for(i in 1:10){
     sum()->x
   ssa_res<-c(ssa_res,x)
 }
-
 ssa_res
+
+pop_res<-c()
+for(i in 1:10){
+  sens_res[[i]]%>%
+    filter(timestep==100)%>%
+    select(num)%>%
+    pull()%>%
+    sum()->x
+  pop_res<-c(pop_res,x)
+}
+pop_res
 
 tibble(cond_s=cond_sens,ssa=ssa_res)%>%
   ggplot(aes(x=factor(cond_s),y=ssa))+

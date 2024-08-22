@@ -35,26 +35,26 @@ codp90early <- quantile(cod_70s$length_cm, 0.9)
 ggplot() +
   geom_histogram(data=cod, aes(x = length_cm), binwidth = 10, fill = "grey", color = "black", alpha = 0.7) +
   geom_vline(aes(xintercept = codp90), color = "black", linetype = "dashed", size = 1) +
-  annotate("text", x = codp90, y = Inf, label = paste('90th percentile, all data:', round(codp90, 2)), 
+  annotate("text", x = codp90, y = Inf, label = paste('90th percentile, all data:', round(codp90, 2), "cm"), 
            hjust = -0.12, vjust = 11, color = "black") +
   labs(title = "Histogram of Cod Lengths (cm), 1970-2023", x = "Length (cm)", y = "Frequency") +
-  theme_minimal()
+  theme_minimal()+
+  theme(text=element_text(size=12))-> codhist
+ggsave(filename="CodHist.png",plot=codhist,width=5,height=3)
 
 ggplot() +
   geom_histogram(data=cod, aes(x = length_cm), binwidth = 10, fill = "grey", color = "black", alpha = 0.7) +
-  geom_histogram(data=cod_70s, aes(x = length_cm), binwidth=10, fill="red", color="black", alpha=0.5) +
   geom_histogram(data=cod_10s, aes(x = length_cm), binwidth=10, fill= "blue", color="black",alpha=0.7) +
   geom_vline(aes(xintercept = codp90), color = "black", linetype = "dashed", size = 1) +
-  annotate("text", x = codp90, y = Inf, label = paste('90th percentile, all data:', round(codp90, 2)), 
+  annotate("text", x = codp90, y = Inf, label = paste('90th percentile, all data:', round(codp90, 2), "cm"), 
            hjust = -0.12, vjust = 11, color = "black") +
   geom_vline(aes(xintercept = codp90late), color = "blue", linetype = "dashed", size = 1) +
-  annotate("text", x = codp90late, y = Inf, label = paste('90th percentile for 2010-2023:', round(codp90late, 2)), 
-           hjust = -0.305, vjust = 14, color = "blue") +
-  geom_vline(aes(xintercept = codp90early), color = "red", linetype = "dashed", size = 1) +
-  annotate("text", x = codp90early, y = Inf, label = paste('90th percentile for 1970s:', round(codp90early, 2)), 
-           hjust = -0.05, vjust = 17, color = "red") +
+  annotate("text", x = codp90late, y = Inf, label = paste('90th percentile for 2010-2023:', round(codp90late, 2), "cm"), 
+           hjust = -0.27, vjust = 14, color = "blue") +
   labs(title = "Histogram of Cod Lengths (cm), 1970-2023", x = "Length (cm)", y = "Frequency") +
-  theme_minimal()
+  theme_minimal()+
+  theme(text=element_text(size=12))-> p
+ggsave(filename="CodHist2.png",plot=p,width=5,height=3)
 
 # total cod
 cod_tot <- cod %>%
@@ -72,12 +72,15 @@ cod_90th <- cod %>%
 cod_90th$percent <- cod_90th$ninetieth_count / sum(cod_90th$ninetieth_count)
 
 # plot cod in 90th percentile by decade
-ggplot(cod_90th, aes(x = decade, y = percent)) +
+ggplot(cod_90th, aes(x = decade, y = ninetieth_count)) +
   geom_bar(stat = "identity", fill="grey", colour="black") +
-  labs(title = "Percent of Atlantic Cod in the 90th Percentile of Length Found in Each Decade",
+  labs(title = "Number of Atlantic Cod in the 90th Percentile of Length Found in Each Decade",
        x = "Decade",
-       y = "Percent") +
-  theme_bw()
+       y = "Count") +
+  theme_bw()+
+  theme(text=element_text(size=15),
+        plot.title=element_text(size=15)) -> cod_counts
+ggsave(filename="Cod90Counts.png", plot=cod_counts, width=8, height=6)
 
 # merge data
 cod_combined <- left_join(cod_tot, cod_90th, by = "decade")
@@ -113,7 +116,7 @@ ggplot(cod_plot, aes(x = decade, y = percentage, fill = type)) +
 ### Cod List - Standardized
 cod_list <- c()
 for (i in 1:5) {
-  cod_list <- c(cod_list, (cod_90th[i, 2] / cod_tot[i, 2])[1, 1])
+  cod_list <- c(cod_list, (cod_90th[i, 2] / cod_tot[i, 2])[1, 1] * 100)
 }
 cod_df <- as.data.frame(cod_list, stringsAsFactors = TRUE)
 cod_df <- data.frame(cod_list, Decade = c("1970s", "1980s", "1990s", "2000s", "2010s and 2020s"))
@@ -121,9 +124,13 @@ cod_long <- pivot_longer(cod_df, cols = "cod_list", names_to = "Metric", values_
 ggplot(cod_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Atlantic Cod: Number in 90th Percentile / Total Number Caught, by Decade", 
-       x = "Decade", y = "Value") +
-  theme_bw()
+  labs(title = "Atlantic Cod: Percent of 90th-Percentile by Length Cod Caught in Each Decade", 
+       x = "Decade", y = "Percent of 90th Percentile Cod") +
+  theme_bw()+
+  theme(text=element_text(size=12))-> cod_90_props
+cod_90_props
+cod_long
+ggsave(filename="Cod90Line.png", plot=cod_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
 cod_year_counts <- cod %>%
@@ -251,10 +258,10 @@ ggplot(plaice_plot, aes(x = decade, y = percentage, fill = type)) +
   scale_color_manual(name = "Type",  values = c("firebrick4", "steelblue2"),
                      aesthetics = "fill") 
 
-### American Plaice List - Standardized
+### Plaice List - Standardized
 plaice_list <- c()
 for (i in 1:5) {
-  plaice_list <- c(plaice_list, (plaice_90th[i, 2] / plaice_tot[i, 2])[1, 1])
+  plaice_list <- c(plaice_list, (plaice_90th[i, 2] / plaice_tot[i, 2])[1, 1] * 100)
 }
 plaice_df <- as.data.frame(plaice_list, stringsAsFactors = TRUE)
 plaice_df <- data.frame(plaice_list, Decade = c("1970s", "1980s", "1990s", "2000s", "2010s and 2020s"))
@@ -262,9 +269,13 @@ plaice_long <- pivot_longer(plaice_df, cols = "plaice_list", names_to = "Metric"
 ggplot(plaice_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "American Plaice: Number in 90th Percentile / Total Number Caught, by Decade", 
-       x = "Decade", y = "Value") +
-  theme_bw()
+  labs(title = "American Plaice: Percent of 90th-Percentile by Length Plaice Caught in Each Decade", 
+       x = "Decade", y = "Percent of 90th Percentile Plaice") +
+  theme_bw()+
+  theme(text=element_text(size=11.5)) -> plaice_90_props
+plaice_90_props
+plaice_df
+ggsave(filename="Plaice90Line.png", plot=plaice_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
 plaice_year_counts <- plaice %>%
@@ -394,7 +405,7 @@ ggplot(herring_plot, aes(x = decade, y = percentage, fill = type)) +
 ### Atlantic Herring List - Standardized
 herring_list <- c()
 for (i in 1:5) {
-  herring_list <- c(herring_list, (herring_90th[i, 2] / herring_tot[i, 2])[1, 1])
+  herring_list <- c(herring_list, (herring_90th[i, 2] / herring_tot[i, 2])[1, 1] * 100)
 }
 herring_df <- as.data.frame(herring_list, stringsAsFactors = TRUE)
 herring_df <- data.frame(herring_list, Decade = c("1970s", "1980s", "1990s", "2000s", "2010s and 2020s"))
@@ -402,9 +413,13 @@ herring_long <- pivot_longer(herring_df, cols = "herring_list", names_to = "Metr
 ggplot(herring_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Atlantic Herring: Number in 90th Percentile / Total Number Caught, by Decade", 
-       x = "Decade", y = "Value") +
-  theme_bw()
+  labs(title = "Atlantic Herring: Percent of 90th-Percentile by Length Herring Caught in Each Decade", 
+       x = "Decade", y = "Percent of 90th Percentile Herring") +
+  theme_bw()+
+  theme(text=element_text(size=11)) -> herring_90_props
+herring_90_props
+herring_df
+ggsave(filename="Herring90Line.png", plot=herring_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
 herring_year_counts <- herring %>%
@@ -531,20 +546,24 @@ ggplot(dogfish_plot, aes(x = decade, y = percentage, fill = type)) +
   scale_color_manual(name = "Type",  values = c("firebrick4", "steelblue2"),
                      aesthetics = "fill") 
 
-### Atlantic dogfish List - Standardized
+### Spiny Dogfish List - Standardized
 dogfish_list <- c()
 for (i in 1:5) {
-  dogfish_list <- c(dogfish_list, (dogfish_90th[i, 2] / dogfish_tot[i, 2])[1, 1])
+  dogfish_list <- c(dogfish_list, (dogfish_90th[i, 2] / dogfish_tot[i, 2])[1, 1] * 100)
 }
 dogfish_df <- as.data.frame(dogfish_list, stringsAsFactors = TRUE)
 dogfish_df <- data.frame(dogfish_list, Decade = c("1970s", "1980s", "1990s", "2000s", "2010s and 2020s"))
 dogfish_long <- pivot_longer(dogfish_df, cols = "dogfish_list", names_to = "Metric", values_to = "value")
+dogfish_long
 ggplot(dogfish_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Spiny Dogfish: Number in 90th Percentile / Total Number Caught, by Decade", 
-       x = "Decade", y = "Value") +
-  theme_bw()
+  labs(title = "Spiny Dogfish: Percent of 90th-Percentile by Length Dogfish Caught in Each Decade", 
+       x = "Decade", y = "Percent of 90th Percentile Dogfish") +
+  theme_bw()+
+  theme(text=element_text(size=12)) -> dogfish_90_props
+dogfish_90_props
+ggsave(filename="Dogfish90Line.png", plot=dogfish_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
 dogfish_year_counts <- dogfish %>%

@@ -5,7 +5,7 @@ library(tidyverse)
 
 data2 <- data.frame(ssa_min = c(1482.944, 7.06E-51, 9.89E-73, 35101.45, 18.47595),
                     ssa_max = c(123738.5, 92610.59, 92610.59, 123738.5, 123738.5234),
-                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-Way", 
+                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-way", 
                     "Fecundity", "Recruitment"))
 data2$difference <- data2$ssa_max - data2$ssa_min
 
@@ -30,7 +30,7 @@ order.parameters <- data2 %>%
   dplyr::select(parameter) %>% 
   unlist() %>% 
   levels()
-
+data2
 # Put in long format for plotting
 df2_long <- data2 %>% 
   gather(key = 'Type', value = 'ssa', ssa_min:ssa_max) %>%
@@ -54,8 +54,9 @@ ggplot()+
   scale_x_continuous(breaks = 1:length(order.parameters), 
                      labels = order.parameters) +
   coord_flip() +
-  labs(title = "Population Model Sensitivity Analysis Tornado Plot: SSA", 
+  labs(title = "Population Model Sensitivity Analysis: SSA", 
        y = "Spawning Stock Abundance") +
   scale_fill_manual(values = c("ssa_min" = "firebrick4", "ssa_max" = "steelblue4"),
-                    labels = c("Maximum SSA", "Minimum SSA"))
-
+                    labels = c("Maximum SSA", "Minimum SSA")) -> SSASensPlot
+SSASensPlot
+ggsave(filename="SSASensPlot.png", plot=SSASensPlot, width=8, height=6)

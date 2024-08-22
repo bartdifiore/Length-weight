@@ -5,8 +5,8 @@ library(tidyverse)
 
 data2 <- data.frame(pop_min = c(4251.587, 2.735476e-49, 1.068914e-71, 217103.6, 43.54149),
                     pop_max = c(1625514, 1221029, 1221029, 1625514, 1625514),
-                    parameter = c("condition", "condsurv", "cond&condsurv", 
-                                  "fecundity", "recruitment"))
+                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-way", 
+                                  "Fecundity", "Recruitment"))
 data2$difference <- data2$pop_max - data2$pop_min
 
 # sort difference, greatest to least
@@ -30,7 +30,7 @@ order.parameters <- data2 %>%
   dplyr::select(parameter) %>% 
   unlist() %>% 
   levels()
-
+data2
 # Put in long format for plotting
 df2_long <- data2 %>% 
   gather(key = 'Type', value = 'pop', pop_min:pop_max) %>%
@@ -54,8 +54,9 @@ ggplot()+
   scale_x_continuous(breaks = 1:length(order.parameters), 
                      labels = order.parameters) +
   coord_flip() +
-  labs(title = "Population Model Sensitivity Analysis Tornado Plot: Total Population", 
-       y = "Total Population") +
+  labs(title = "Population Model Sensitivity Analysis: Total Female Population", 
+       y = "Total Female Population") +
   scale_fill_manual(values = c("pop_min" = "firebrick4", "pop_max" = "steelblue4"),
-                    labels = c("Maximum Population", "Minimum Population"))
+                    labels = c("Maximum Female Population", "Minimum Female Population")) -> popSensPlot
+ggsave(filename="PopSensPlot.png", plot=popSensPlot, width=8, height=6)
  

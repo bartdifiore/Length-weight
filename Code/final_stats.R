@@ -77,13 +77,15 @@ cod_plot_all <- cod %>%
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 18, face = "bold", hjust = 0.5)) +
+        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
   scale_color_manual(name = "Time Period",  values = c("orangered2", "yellowgreen", "steelblue2")) 
 print(cod_plot_all)
+ggsave(filename="CodPlotAll.png", plot=cod_plot_all, width=8, height=6)
 
-### Just Cod in gom Plot
+### Just Cod in GOM Plot
 cod_gom <- cod %>%
-  filter(EPU == "gom") %>%
+  filter(EPU == "GOM") %>%
   ggplot(aes(x = LENGTH, y = INDWT))+
   geom_point(aes(color=Time_Period)) +
   labs(title = "Atlantic Cod in the Gulf of Maine: Length vs. Weight",
@@ -93,13 +95,15 @@ cod_gom <- cod %>%
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 18, face = "bold", hjust = 0.5)) +
+        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
   scale_color_manual(name = "Time Period",  values = c("orangered2", "yellowgreen", "steelblue2"))
 print(cod_gom)
+ggsave(filename="CodGOM.png",plot=cod_gom,width=8,height=6)
 
-### Cod gom Log Plot
+### Cod GOM Log Plot
 cod_gom_log <- cod %>%
-  filter(EPU == "gom") %>%
+  filter(EPU == "GOM") %>%
   ggplot(aes(x = LENGTH, y = INDWT))+
   geom_point(aes(color=Time_Period)) +
   labs(title = "Atlantic Cod in the Gulf of Maine: log(Length) vs log(Weight)",
@@ -111,9 +115,11 @@ cod_gom_log <- cod %>%
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 16, face = "bold", hjust = 0.5)) +
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        text=element_text(size=15))+
   scale_color_manual(name = "Time Period",  values = c("orangered2", "yellowgreen", "steelblue2"))
 print(cod_gom_log)
+ggsave(filename="CodGOMLog.png",plot=cod_gom_log,width=8,height=6)
 
 ### Cod Model
 cod_model <- lm(log(INDWT) ~ log(LENGTH)*Time_Period + log(LENGTH)*EPU, data=cod)
@@ -132,6 +138,7 @@ summary(cod_model2)
 em_cod <- emtrends(cod_model2, ~EPU + Time_Period, "log(LENGTH)", data = cod)
 pairs(em_cod, simple = "Time_Period")
 pairs(em_cod, simple = "EPU")
+cod
 
 # EPU DF
 cod.epu.table <- matrix(nrow=4, ncol=3, byrow=TRUE)
@@ -183,8 +190,11 @@ ggplot(cod.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = EPU
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->cod_epu_plot
+print(cod_epu_plot)
+ggsave(filename="CodEPUPlot.png",plot=cod_epu_plot,width=8,height=6)
 
 ### Cod Predictions Plot With Plotted Points
 cod_vec_size <- seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100)
@@ -271,7 +281,7 @@ summary(plaice_model2)
 # comparing slopes for each EPU by Time_Period
 em_plaice <- emtrends(plaice_model2, ~EPU + Time_Period, "log(LENGTH)", data = plaice)
 pairs(em_plaice, simple = "Time_Period")
-
+plaice
 # EPU DF
 plaice.epu.table <- matrix(nrow=3, ncol=3, byrow=TRUE)
 rownames(plaice.epu.table) <- c('GB', 'GOM', 'SS')
@@ -315,8 +325,11 @@ ggplot(plaice.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = 
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "purple"))
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "purple"))->plaice_epu_plot
+plaice_epu_plot
+ggsave(filename="PlaiceEPUPlot.png", plot=plaice_epu_plot, width=8, height=6)
 
 ### Plaice Predictions Plot With Plotted Points
 plaice_vec_size <- seq(min(plaice$LENGTH), max(plaice$LENGTH), length.out = 100)
@@ -454,8 +467,11 @@ ggplot(herring.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color =
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->herring_epu_plot
+herring_epu_plot
+ggsave(filename="HerringEPUPlot.png", plot=herring_epu_plot, width=8, height=6)
 
 # Herring Predictions Plot With Plotted Points
 herring_vec_size <- seq(min(herring$LENGTH), max(herring$LENGTH), length.out = 100)
@@ -490,10 +506,13 @@ dogfish <- lw_data %>%
 ### Dogfish - Ignoring Interaction
 dogfishlm <- lm(log(INDWT) ~ log(LENGTH)*Time_Period, dogfish)
 summary(dogfishlm)
+# weight for a 100cm dogfish, early
+exp(-13.039562)*(100^3.144316)
+# weight for a 100cm dogfish, late
+exp(-13.039562 + 0.248203)*(100^(3.144316-0.065107))
 b.tibble["Spiny Dogfish", "1992 - 2002"] <- dogfishlm$coefficients[2]
 b.tibble["Spiny Dogfish", "2003 - 2013"] <- dogfishlm$coefficients[2]+dogfishlm$coefficients[5]
 b.tibble["Spiny Dogfish", "2014 - 2023"] <- dogfishlm$coefficients[2]+dogfishlm$coefficients[6]
-
 
 ### Spiny dogfish Data Plot
 dogfish_plot <- dogfish %>%
@@ -541,6 +560,7 @@ summary(dogfish_model2)
 # Comparing slopes for each EPU by Time_Period
 em_dog <- emtrends(dogfish_model2, ~EPU*Time_Period, "log(LENGTH)", data = dogfish)
 pairs(em_dog, simple = "Time_Period")
+dogfish
 
 # EPU DF
 dogfish.epu.table <- matrix(nrow=4, ncol=3, byrow=TRUE)
@@ -592,9 +612,11 @@ ggplot(dogfish.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color =
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5)) +
-  scale_color_manual(name = "EPU",  values = c("red", "yellowgreen", "blue", "orange"))
-# "orangered2", "yellowgreen", "steelblue2", "purple"
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->dogfish_epu_plot
+dogfish_epu_plot
+ggsave(filename="DogfishEPUPlot.png", plot=dogfish_epu_plot, width=8, height=6)
 
 # Spiny Dogfish Predictions Plot With Plotted Points
 dogfish_vec_size <- seq(min(dogfish$LENGTH), max(dogfish$LENGTH), length.out = 100)
@@ -616,7 +638,6 @@ ggplot(dogfish, aes(x = LENGTH, y = INDWT))+
 ### ---------------------------------------------------------------------------
 ### Plot of Slope Changes
 ### ---------------------------------------------------------------------------
-
 # IGNORING INTERACTION
 b.df <- as.data.frame(b.tibble, stringsAsFactors = FALSE)
 b.df$Species <- rownames(b.tibble)
@@ -634,8 +655,10 @@ ggplot(b.df.long, aes(x = Time_Period, y = Slope, group = Species, color = Speci
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15), 
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face="bold")) +
-  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple")) 
+        plot.title = element_text(size = 15, face="bold"),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->species_slopes
+ggsave(filename="BBySpecies.png", plot=species_slopes, width=8, height=6)
 
 # GB
 gb.b.df <- as.data.frame(gb.b, stringsAsFactors = FALSE)
@@ -655,8 +678,10 @@ ggplot(gb.b.df.long, aes(x = Time_Period, y = Slope, group = Species, color = Sp
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15), 
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face="bold")) +
-  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple")) 
+        plot.title = element_text(size = 15, face="bold"),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->BGB
+ggsave(filename="BGB.png", plot=BGB, width=8, height=6)
 
 # gom
 gom.b.df <- as.data.frame(gom.b, stringsAsFactors = FALSE)
@@ -677,8 +702,10 @@ ggplot(gom.b.df.long, aes(x = Time_Period, y = Slope, group = Species, color = S
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15), 
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face="bold")) +
-  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple")) 
+        plot.title = element_text(size = 15, face="bold"),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->BGOM
+ggsave(filename="BGOM.png", plot=BGOM, width=8, height=6)
 
 # MAB
 mab.b.df <- as.data.frame(mab.b, stringsAsFactors = FALSE)
@@ -698,8 +725,10 @@ ggplot(mab.b.df.long, aes(x = Time_Period, y = Slope, group = Species, color = S
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15), 
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face="bold")) +
-  scale_color_manual(name = "Species",  values = c("yellowgreen","steelblue2", "purple")) 
+        plot.title = element_text(size = 15, face="bold"),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "Species",  values = c("yellowgreen","steelblue2", "purple"))->BMAB
+ggsave(filename="BMAB.png", plot=BMAB, width=8, height=6)
 
 # SS
 ss.b.df <- as.data.frame(ss.b, stringsAsFactors = FALSE)
@@ -719,8 +748,10 @@ ggplot(ss.b.df.long, aes(x = Time_Period, y = Slope, group = Species, color = Sp
   theme(legend.box.background = element_rect(color="black"),
         legend.title = element_text(size = 15), 
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face="bold")) +
-  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple")) 
+        plot.title = element_text(size = 15, face="bold"),
+        text=element_text(size=15)) +
+  scale_color_manual(name = "Species",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->BSS
+ggsave(filename="BSS.png", plot=BSS, width=8, height=6)
 
 ### ---------------------------------------------------------------------------
 ### Coefficients 
@@ -729,11 +760,11 @@ unique_comname <- unique(lw_data$COMNAME)
 unique_comname <- na.omit(unique_comname)
 
 data <- lw_data %>%
-  filter(!is.na(LENGTH) & !is.na(INDWT) & !is.na(COMNAME)) %>%
-  mutate(Time_Period = case_when(YEAR >= 2014 ~ "2014 - 2023",
-                            YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
-                            YEAR <= 2002 ~ "1992 - 2002"))
-
+  mutate(Time_Period = case_when(YEAR < 2000 ~ "Wigley",
+                            YEAR >= 2016 ~ "Current")) %>%
+  filter(!is.na(Time_Period)) %>%
+  filter(!is.na(LENGTH) & !is.na(INDWT) & !is.na(COMNAME) & INDWT > 0)
+  
 grouped_data <- data %>%
   group_by(COMNAME, Time_Period) %>%
   summarise(count = n())
@@ -749,22 +780,14 @@ species <- c()
 for (spec in unique_species) {
   spec_decs <- filtered_groups %>%
     filter(COMNAME == spec)
-  if (nrow(spec_decs) == 3) {
+  if (nrow(spec_decs) == 2) {
     species <- c(species, spec)
   }
 }
-
-season_counts <- data %>%
-  filter(COMNAME %in% species) %>% 
-  filter(!is.na(SEASON)) %>%             
-  group_by(COMNAME, Time_Period, SEASON) %>%
-  summarise(count = n()) %>%
-  filter(count >= 5) %>%
-  ungroup()
+species
 
 coeffs.by.Time_Period.df <- data.frame(row.names = species)
-Time_Periods = c('1992 - 2002', '2003 - 2013', '2014 - 2023')
-seasons = c('SPRING', 'FALL')
+Time_Periods = c('Wigley', 'Current')
 
 # filtering out large outliers
 data <- data %>%
@@ -784,31 +807,125 @@ data <- data %>%
   filter(! (COMNAME == "WINTER FLOUNDER" & LENGTH < 20 & INDWT > 3))
 
 for (d in Time_Periods) {
-  for (s in seasons) {
-    coeffs.by.Time_Period.df[[paste0("B.", s, ".", d)]] <- NA
-    coeffs.by.Time_Period.df[[paste0("A.", s, ".", d)]] <- NA
+    coeffs.by.Time_Period.df[[paste0("B.", d)]] <- NA
   }
-}
 
 for (spec in species) {
   spec_data <- lw_data %>%
     filter(COMNAME == spec) %>%
-    filter(INDWT != 0) %>%
-    mutate(Time_Period = case_when(YEAR >= 2014 ~ "2014 - 2023",
-                              YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
-                              YEAR <= 2002 ~ "1992 - 2002"))
+    mutate(Time_Period = case_when(YEAR < 2000 ~ "Wigley",
+                                   YEAR >= 2016 ~ "Current")) %>%
+    filter(!is.na(Time_Period))
   
   for (dec in Time_Periods) {
-    for (szn in seasons) {
-      season_data <- spec_data %>%
-        filter(SEASON == szn & Time_Period == dec)
-      if (nrow(season_data) >= 5) {
-        spec.szn.lm <- lm(log(INDWT) ~ log(LENGTH), data = season_data)
-        coeffs.by.Time_Period.df[spec, paste0("B.", szn, ".", dec)] <- coef(spec.szn.lm)[2]
-        coeffs.by.Time_Period.df[spec, paste0("A.", szn, ".", dec)] <- coef(spec.szn.lm)[1]
-      }
+    curdat <- spec_data %>%
+        filter(Time_Period == dec & INDWT > 0)
+        spec.lm <- lm(log(INDWT) ~ log(LENGTH), data = curdat)
+        coeffs.by.Time_Period.df[spec, paste0("B.", dec)] <- coef(spec.lm)[2]
     }
   }
-}
-print(coeffs.by.Time_Period.df)
 
+# for loop taking care of beta p-values, increases, and decreases
+for (spec in species) {
+  species_dat <- data %>%
+    filter(COMNAME == spec)
+  cur_lm <- lm(log(species_dat$INDWT) ~ log(species_dat$LENGTH)*species_dat$Time_Period)
+  p_value <- summary(cur_lm)$coefficients["log(species_dat$LENGTH):species_dat$Time_PeriodWigley", 4]
+  coeffs.by.Time_Period.df[spec, "B.P"] <- p_value
+  if (p_value < 0.5) {
+    change <- coeffs.by.Time_Period.df[spec, "B.Current"] - coeffs.by.Time_Period.df[spec, "B.Wigley"]
+    if (change > 0) {
+      coeffs.by.Time_Period.df[spec, "B.Result"] <- "Increase"
+    } else {
+      coeffs.by.Time_Period.df[spec, "B.Result"] <- "Decrease"
+    }
+  }
+  else {
+    coeffs.by.Time_Period.df[spec, "B.Result"] <- "No Significant Change"
+  }
+}
+
+# Counts of Beta Changes
+ggplot(coeffs.by.Time_Period.df, aes(x = B.Result)) +
+  geom_bar(fill = "steelblue") + 
+  labs(title = "Changes in β Between 1992-1999 and 2016-2023",
+       x = "Result",
+       y = "Number of Species") +
+  theme_minimal() +
+  theme(text = element_text(size=12, face="bold")) -> beta_changes
+ggsave(filename="Beta_changes.png", plot=beta_changes, width=6, height=8)
+
+beta_counts <- coeffs.by.Time_Period.df %>%
+  group_by(B.Result) %>%
+  summarize(count = n())
+beta_counts
+
+# dealing with alpha: p-values, increases, and decreases
+for (spec in species) {
+  cur_lm <- lm(log(species_dat$INDWT) ~ log(species_dat$LENGTH)*species_dat$Time_Period)
+  coeffs.by.Time_Period.df[spec, "A.Wigley"] <- exp(coef(cur_lm)[1])
+  coeffs.by.Time_Period.df[spec, "A.Current"] <- exp(coef(cur_lm)[1] + coef(cur_lm)[3])
+  species_dat <- data %>%
+    filter(COMNAME == spec)
+  p_value <- summary(cur_lm)$coefficients["species_dat$Time_PeriodWigley", 4]
+  coeffs.by.Time_Period.df[spec, "A.P"] <- p_value
+  if (p_value < 0.5) {
+    change <- exp(coeffs.by.Time_Period.df[spec, "A.Current"]) - exp(coeffs.by.Time_Period.df[spec, "A.Wigley"])
+    if (change > 0) {
+      coeffs.by.Time_Period.df[spec, "A.Result"] <- "Increase"
+    } else {
+      coeffs.by.Time_Period.df[spec, "A.Result"] <- "Decrease"
+    }
+  }
+  else {
+    coeffs.by.Time_Period.df[spec, "A.Result"] <- "No Significant Change"
+  }
+}
+
+# Counts of Alpha Changes
+ggplot(coeffs.by.Time_Period.df, aes(x = A.Result)) +
+  geom_bar(fill = "steelblue") + 
+  labs(title = "Changes in α Between 1992-1999 and 2016-2023",
+       x = "Result",
+       y = "Number of Species") +
+  theme_minimal() +
+  theme(text = element_text(size=12, face="bold")) -> alpha_changes
+ggsave(filename="Alpha_changes.png", plot=alpha_changes, width=6, height=8)
+
+alpha_counts <- coeffs.by.Time_Period.df %>%
+  group_by(A.Result) %>%
+  summarize(count = n())
+alpha_counts
+
+# counts of both
+both_counts <- coeffs.by.Time_Period.df %>%
+  group_by(B.Result, A.Result) %>%
+  summarize(count = n())
+both_counts
+
+# percent decrease of fish at mean length
+for (spec in species) {
+  spec_dat <- lw_data %>%
+    filter(COMNAME == spec & !is.na(LENGTH))
+  early <- coeffs.by.Time_Period.df[spec, "A.Wigley"]*mean(spec_dat$LENGTH)^coeffs.by.Time_Period.df[spec, "B.Wigley"]
+  late <- coeffs.by.Time_Period.df[spec, "A.Current"]*mean(spec_dat$LENGTH)^coeffs.by.Time_Period.df[spec, "B.Current"]
+  change <- early/late
+  coeffs.by.Time_Period.df[spec, "Exp Early / Exp Late * 100 at Mean"] <- (early/late)*100
+}
+
+num_species_above_100 <- sum(coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean` > 100, na.rm = TRUE)
+print(num_species_above_100)
+
+coeffs.by.Time_Period.df$B.Wigley <- round(coeffs.by.Time_Period.df$B.Wigley, 3)
+coeffs.by.Time_Period.df$B.Current <- round(coeffs.by.Time_Period.df$B.Current, 3)
+coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean` <- round(coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean`, 3)
+
+coeffs.by.Time_Period.df <- coeffs.by.Time_Period.df %>%
+  mutate(
+    A.P = ifelse(A.P < 0.001, "<0.001", sprintf("%.3f", A.P)),
+    B.P = ifelse(B.P < 0.001, "<0.001", sprintf("%.3f", B.P))
+  )
+library(stringr)
+rownames(coeffs.by.Time_Period.df) <- str_to_title(tolower(rownames(coeffs.by.Time_Period.df)))
+
+write.csv(coeffs.by.Time_Period.df,"~/Downloads/File.csv", row.names = TRUE)

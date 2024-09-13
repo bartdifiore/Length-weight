@@ -124,10 +124,9 @@ cod_long <- pivot_longer(cod_df, cols = "cod_list", names_to = "Metric", values_
 ggplot(cod_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Atlantic Cod: Percent of 90th-Percentile by Length Cod Caught in Each Decade", 
-       x = "Decade", y = "Percent of 90th Percentile Cod") +
-  theme_bw()+
-  theme(text=element_text(size=12))-> cod_90_props
+  labs(title = "Atlantic Cod: Proportion of Large Fish Caught", 
+       x = "Decade", y = "Percent of 90th Percentile Cod by Length") +
+  theme_bw(base_size=18) -> cod_90_props
 cod_90_props
 cod_long
 ggsave(filename="Cod90Line.png", plot=cod_90_props, width=8, height=6)
@@ -269,12 +268,10 @@ plaice_long <- pivot_longer(plaice_df, cols = "plaice_list", names_to = "Metric"
 ggplot(plaice_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "American Plaice: Percent of 90th-Percentile by Length Plaice Caught in Each Decade", 
-       x = "Decade", y = "Percent of 90th Percentile Plaice") +
-  theme_bw()+
-  theme(text=element_text(size=11.5)) -> plaice_90_props
+  labs(title = "American Plaice: Proportion of Large Fish Caught", 
+       x = "Decade", y = "Percent of 90th Percentile Plaice by Length") +
+  theme_bw(base_size=18) -> plaice_90_props
 plaice_90_props
-plaice_df
 ggsave(filename="Plaice90Line.png", plot=plaice_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
@@ -413,12 +410,10 @@ herring_long <- pivot_longer(herring_df, cols = "herring_list", names_to = "Metr
 ggplot(herring_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Atlantic Herring: Percent of 90th-Percentile by Length Herring Caught in Each Decade", 
-       x = "Decade", y = "Percent of 90th Percentile Herring") +
-  theme_bw()+
-  theme(text=element_text(size=11)) -> herring_90_props
+  labs(title = "Atlantic Herring: Proportion of Large Fish Caught", 
+       x = "Decade", y = "Percent of 90th Percentile Herring by Length") +
+  theme_bw(base_size=18) -> herring_90_props
 herring_90_props
-herring_df
 ggsave(filename="Herring90Line.png", plot=herring_90_props, width=8, height=6)
 
 # experimenting... by year instead of decade
@@ -558,10 +553,9 @@ dogfish_long
 ggplot(dogfish_long, aes(x = Decade, y = value, group = 1)) +
   geom_line() +
   geom_point() +
-  labs(title = "Spiny Dogfish: Percent of 90th-Percentile by Length Dogfish Caught in Each Decade", 
-       x = "Decade", y = "Percent of 90th Percentile Dogfish") +
-  theme_bw()+
-  theme(text=element_text(size=12)) -> dogfish_90_props
+  labs(title = "Spiny Dogfish: Proportion of Large Fish Caught", 
+       x = "Decade", y = "Percent of 90th Percentile Dogfish by Length") +
+  theme_bw(base_size=18) -> dogfish_90_props
 dogfish_90_props
 ggsave(filename="Dogfish90Line.png", plot=dogfish_90_props, width=8, height=6)
 

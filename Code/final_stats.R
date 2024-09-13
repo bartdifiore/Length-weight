@@ -265,6 +265,7 @@ plaice_plot_all <- plaice %>%
         plot.title = element_text(size = 18, face = "bold", hjust = 0.5)) +
   scale_color_manual(name = "Time Period",  values = c("orangered2", "yellowgreen", "steelblue2"))
 print(plaice_plot_all)
+# ggsave(filename="PlaicePlotUnfiltered.png", plot=plaice_plot_all, width=8, height=6)
 
 plaice_model <- lm(log(INDWT) ~ log(LENGTH)*Time_Period + log(LENGTH)*EPU, data=plaice)
 summary(plaice_model)
@@ -354,7 +355,7 @@ ggplot(plaice, aes(x = LENGTH, y = INDWT))+
 # -----------------------------------------------------------------------------
 herring <- lw_data %>%
   filter(COMNAME == 'ATLANTIC HERRING') %>%
-  filter(INDWT < 0.6) %>%
+  filter(INDWT < 2) %>%
   filter(INDWT != 0) %>%
   mutate(Time_Period = case_when(YEAR >= 2014 ~ "2014 - 2023",
                             YEAR >= 2003 & YEAR < 2014 ~ "2003 - 2013",
@@ -784,15 +785,15 @@ for (spec in unique_species) {
     species <- c(species, spec)
   }
 }
-species
 
-coeffs.by.Time_Period.df <- data.frame(row.names = species)
-Time_Periods = c('Wigley', 'Current')
+b.by.Time_Period.df <- data.frame(row.names = species)
+lna.by.Time_Period.df <- data.frame(row.names = species)
+Time_Periods = c('Wigley', 'Recent')
 
 # filtering out large outliers
 data <- data %>%
   filter(! (COMNAME == "AMERICAN PLAICE" & INDWT > 4) ) %>%
-  filter(! (COMNAME == "ATLANTIC HERRING" & INDWT > 0.5)) %>%
+  filter(! (COMNAME == "ATLANTIC HERRING" & INDWT > 2)) %>%
   filter(! (COMNAME == "ATLANTIC SHARPNOSE SHARK" & LENGTH > 106)) %>%
   ## blunt nose stingray - says they can be up to 100 cm. a few observations are close/over
   filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 50)) %>%
@@ -807,23 +808,16 @@ data <- data %>%
   filter(! (COMNAME == "WINTER FLOUNDER" & LENGTH < 20 & INDWT > 3))
 
 for (d in Time_Periods) {
-    coeffs.by.Time_Period.df[[paste0("B.", d)]] <- NA
-  }
-
-for (spec in species) {
-  spec_data <- lw_data %>%
-    filter(COMNAME == spec) %>%
-    mutate(Time_Period = case_when(YEAR < 2000 ~ "Wigley",
-                                   YEAR >= 2016 ~ "Current")) %>%
-    filter(!is.na(Time_Period))
-  
-  for (dec in Time_Periods) {
-    curdat <- spec_data %>%
-        filter(Time_Period == dec & INDWT > 0)
-        spec.lm <- lm(log(INDWT) ~ log(LENGTH), data = curdat)
-        coeffs.by.Time_Period.df[spec, paste0("B.", dec)] <- coef(spec.lm)[2]
-    }
-  }
+    b.by.Time_Period.df["B.Wigley"] <- NA
+    b.by.Time_Period.df["B.Wigley.s"] <- NA
+    b.by.Time_Period.df["B.Recent"] <- NA
+    b.by.Time_Period.df["B.Recent.s"] <- NA
+    
+    lna.by.Time_Period.df["lnA.Wigley"] <- NA
+    lna.by.Time_Period.df["lnA.Wigley.s"] <- NA
+    lna.by.Time_Period.df["lnA.Recent"] <- NA
+    lna.by.Time_Period.df["lnA.Recent.s"] <- NA
+}
 
 # for loop taking care of beta p-values, increases, and decreases
 for (spec in species) {
@@ -831,101 +825,114 @@ for (spec in species) {
     filter(COMNAME == spec)
   cur_lm <- lm(log(species_dat$INDWT) ~ log(species_dat$LENGTH)*species_dat$Time_Period)
   p_value <- summary(cur_lm)$coefficients["log(species_dat$LENGTH):species_dat$Time_PeriodWigley", 4]
-  coeffs.by.Time_Period.df[spec, "B.P"] <- p_value
+  b.by.Time_Period.df[spec, "B.Wigley"] <- cur_lm$coefficients[2]
+  b.by.Time_Period.df[spec, "B.Recent"] <- cur_lm$coefficients[2]+cur_lm$coefficients[4]
+  b.by.Time_Period.df[spec, "B.Wigley.s"] <- summary(cur_lm)$coefficients[2,2]
+  b.by.Time_Period.df[spec, "B.Recent.s"] <- summary(cur_lm)$coefficients[4,2]
+  b.by.Time_Period.df[spec, "B.P"] <- p_value
   if (p_value < 0.5) {
-    change <- coeffs.by.Time_Period.df[spec, "B.Current"] - coeffs.by.Time_Period.df[spec, "B.Wigley"]
+    change <- b.by.Time_Period.df[spec, "B.Recent"] - b.by.Time_Period.df[spec, "B.Wigley"]
     if (change > 0) {
-      coeffs.by.Time_Period.df[spec, "B.Result"] <- "Increase"
+      b.by.Time_Period.df[spec, "B.Result"] <- "Increase"
     } else {
-      coeffs.by.Time_Period.df[spec, "B.Result"] <- "Decrease"
+      b.by.Time_Period.df[spec, "B.Result"] <- "Decrease"
     }
   }
   else {
-    coeffs.by.Time_Period.df[spec, "B.Result"] <- "No Significant Change"
+    b.by.Time_Period.df[spec, "B.Result"] <- "No Significant Change"
   }
 }
 
 # Counts of Beta Changes
-ggplot(coeffs.by.Time_Period.df, aes(x = B.Result)) +
+ggplot(b.by.Time_Period.df, aes(x = B.Result)) +
   geom_bar(fill = "steelblue") + 
   labs(title = "Changes in β Between 1992-1999 and 2016-2023",
        x = "Result",
        y = "Number of Species") +
   theme_minimal() +
   theme(text = element_text(size=12, face="bold")) -> beta_changes
-ggsave(filename="Beta_changes.png", plot=beta_changes, width=6, height=8)
+ggsave(filename="Beta_changes.png", plot=beta_changes, width=6, height=6)
+beta_changes
 
-beta_counts <- coeffs.by.Time_Period.df %>%
+beta_counts <- b.by.Time_Period.df %>%
   group_by(B.Result) %>%
   summarize(count = n())
 beta_counts
 
+# looking at species names who showed an increase
+increase_species <- b.by.Time_Period.df %>%
+  filter(B.Result == "Increase") %>%
+  rownames_to_column("Species") %>%  # If species names are row names
+  select(Species)
+increase_species
+
+# looking at species names who showed an decrease
+decrease_species <- b.by.Time_Period.df %>%
+  filter(B.Result == "Decrease") %>%
+  rownames_to_column("Species") %>%  # If species names are row names
+  select(Species)
+decrease_species
+
 # dealing with alpha: p-values, increases, and decreases
 for (spec in species) {
   cur_lm <- lm(log(species_dat$INDWT) ~ log(species_dat$LENGTH)*species_dat$Time_Period)
-  coeffs.by.Time_Period.df[spec, "A.Wigley"] <- exp(coef(cur_lm)[1])
-  coeffs.by.Time_Period.df[spec, "A.Current"] <- exp(coef(cur_lm)[1] + coef(cur_lm)[3])
+  lna.by.Time_Period.df[spec, "lnA.Wigley"] <- cur_lm$coefficients[1]
+  lna.by.Time_Period.df[spec, "lnA.Recent"] <- cur_lm$coefficients[1]+cur_lm$coefficients[3]
+  lna.by.Time_Period.df[spec, "lnA.Wigley.s"] <- summary(cur_lm)$coefficients[1,2]
+  lna.by.Time_Period.df[spec, "lnA.Recent.s"] <- summary(cur_lm)$coefficients[3,2]
+  lna.by.Time_Period.df[spec, "lnA.P"] <- p_value
   species_dat <- data %>%
     filter(COMNAME == spec)
   p_value <- summary(cur_lm)$coefficients["species_dat$Time_PeriodWigley", 4]
-  coeffs.by.Time_Period.df[spec, "A.P"] <- p_value
+  lna.by.Time_Period.df[spec, "lnA.P"] <- p_value
   if (p_value < 0.5) {
-    change <- exp(coeffs.by.Time_Period.df[spec, "A.Current"]) - exp(coeffs.by.Time_Period.df[spec, "A.Wigley"])
+    change <- lna.by.Time_Period.df[spec, "lnA.Recent"] - lna.by.Time_Period.df[spec, "lnA.Wigley"]
     if (change > 0) {
-      coeffs.by.Time_Period.df[spec, "A.Result"] <- "Increase"
+      lna.by.Time_Period.df[spec, "lnA.Result"] <- "Increase"
     } else {
-      coeffs.by.Time_Period.df[spec, "A.Result"] <- "Decrease"
+      lna.by.Time_Period.df[spec, "lnA.Result"] <- "Decrease"
     }
   }
   else {
-    coeffs.by.Time_Period.df[spec, "A.Result"] <- "No Significant Change"
+    lna.by.Time_Period.df[spec, "lnA.Result"] <- "No Significant Change"
   }
 }
 
 # Counts of Alpha Changes
-ggplot(coeffs.by.Time_Period.df, aes(x = A.Result)) +
+ggplot(lna.by.Time_Period.df, aes(x = lnA.Result)) +
   geom_bar(fill = "steelblue") + 
-  labs(title = "Changes in α Between 1992-1999 and 2016-2023",
+  labs(title = "Changes in ln(α) Between 1992-1999 and 2016-2023",
        x = "Result",
        y = "Number of Species") +
   theme_minimal() +
   theme(text = element_text(size=12, face="bold")) -> alpha_changes
 ggsave(filename="Alpha_changes.png", plot=alpha_changes, width=6, height=8)
 
-alpha_counts <- coeffs.by.Time_Period.df %>%
-  group_by(A.Result) %>%
+alpha_counts <- lna.by.Time_Period.df %>%
+  group_by(lnA.Result) %>%
   summarize(count = n())
 alpha_counts
 
-# counts of both
-both_counts <- coeffs.by.Time_Period.df %>%
-  group_by(B.Result, A.Result) %>%
-  summarize(count = n())
-both_counts
+# rounding estimates & s
+b.by.Time_Period.df$B.Wigley <- round(b.by.Time_Period.df$B.Wigley, 3)
+b.by.Time_Period.df$B.Recent <- round(b.by.Time_Period.df$B.Recent, 3)
+b.by.Time_Period.df$B.Wigley.s <- round(b.by.Time_Period.df$B.Wigley.s, 5)
+b.by.Time_Period.df$B.Recent.s <- round(b.by.Time_Period.df$B.Recent.s, 5)
+lna.by.Time_Period.df$lnA.Wigley <- round(lna.by.Time_Period.df$lnA.Wigley, 3)
+lna.by.Time_Period.df$lnA.Recent <- round(lna.by.Time_Period.df$lnA.Recent, 3)
+lna.by.Time_Period.df$lnA.Wigley.s <- round(lna.by.Time_Period.df$lnA.Wigley.s, 5)
+lna.by.Time_Period.df$lnA.Recent.s <- round(lna.by.Time_Period.df$lnA.Recent.s, 5)
 
-# percent decrease of fish at mean length
-for (spec in species) {
-  spec_dat <- lw_data %>%
-    filter(COMNAME == spec & !is.na(LENGTH))
-  early <- coeffs.by.Time_Period.df[spec, "A.Wigley"]*mean(spec_dat$LENGTH)^coeffs.by.Time_Period.df[spec, "B.Wigley"]
-  late <- coeffs.by.Time_Period.df[spec, "A.Current"]*mean(spec_dat$LENGTH)^coeffs.by.Time_Period.df[spec, "B.Current"]
-  change <- early/late
-  coeffs.by.Time_Period.df[spec, "Exp Early / Exp Late * 100 at Mean"] <- (early/late)*100
-}
-
-num_species_above_100 <- sum(coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean` > 100, na.rm = TRUE)
-print(num_species_above_100)
-
-coeffs.by.Time_Period.df$B.Wigley <- round(coeffs.by.Time_Period.df$B.Wigley, 3)
-coeffs.by.Time_Period.df$B.Current <- round(coeffs.by.Time_Period.df$B.Current, 3)
-coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean` <- round(coeffs.by.Time_Period.df$`Exp Early / Exp Late * 100 at Mean`, 3)
-
-coeffs.by.Time_Period.df <- coeffs.by.Time_Period.df %>%
-  mutate(
-    A.P = ifelse(A.P < 0.001, "<0.001", sprintf("%.3f", A.P)),
-    B.P = ifelse(B.P < 0.001, "<0.001", sprintf("%.3f", B.P))
-  )
+# rounding P values
+b.by.Time_Period.df <- b.by.Time_Period.df %>%
+  mutate(B.P = ifelse(B.P < 0.001, "<0.001", sprintf("%.3f", B.P)))
+lna.by.Time_Period.df <- lna.by.Time_Period.df %>%
+  mutate(lnA.P = ifelse(lnA.P < 0.001, "<0.001", sprintf("%.3f", lnA.P)))
 library(stringr)
-rownames(coeffs.by.Time_Period.df) <- str_to_title(tolower(rownames(coeffs.by.Time_Period.df)))
+rownames(b.by.Time_Period.df) <- str_to_title(tolower(rownames(b.by.Time_Period.df)))
+rownames(lna.by.Time_Period.df) <- str_to_title(tolower(rownames(lna.by.Time_Period.df)))
+rownames(change.df) <- str_to_title(tolower(rownames(change.df)))
 
-write.csv(coeffs.by.Time_Period.df,"~/Downloads/File.csv", row.names = TRUE)
+write.csv(b.by.Time_Period.df,"~/Downloads/BetaFile.csv", row.names = TRUE)
+write.csv(lna.by.Time_Period.df,"~/Downloads/AlphaFile.csv", row.names = TRUE)
+

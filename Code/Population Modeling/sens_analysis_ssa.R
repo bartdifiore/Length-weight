@@ -5,7 +5,7 @@ library(tidyverse)
 
 data2 <- data.frame(ssa_min = c(1482.944, 7.06E-51, 9.89E-73, 35101.45, 18.47595),
                     ssa_max = c(123738.5, 92610.59, 92610.59, 123738.5, 123738.5234),
-                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-way", 
+                    parameter = c("Condition-Dependent Fecundity", "Condition-Dependent Survival", "Condition Two-way", 
                     "Fecundity", "Recruitment"))
 data2$difference <- data2$ssa_max - data2$ssa_min
 
@@ -47,16 +47,21 @@ ggplot()+
           aes(ymax = ymax, ymin = ymin, xmax = xmax, xmin = xmin, fill = Type)) +
   theme_bw() +
   theme(axis.title.y = element_blank(), 
+        axis.title.x = element_text(size = 16),         
         legend.title = element_blank(),
-        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5, size = 10),
-        axis.text.y = element_text(size = 10)) + 
+        legend.position = "bottom",
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5, size = 16),
+        axis.text.y = element_text(size = 14),
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5), 
+        legend.text = element_text(size = 16)) + 
   geom_hline(yintercept = middle, linetype = "dashed", color = "red") +
   scale_x_continuous(breaks = 1:length(order.parameters), 
                      labels = order.parameters) +
   coord_flip() +
-  labs(title = "Population Model Sensitivity Analysis: SSA", 
+  labs(title = "Population Model Sensitivity Analysis: Spawning Stock Abundance", 
        y = "Spawning Stock Abundance") +
   scale_fill_manual(values = c("ssa_min" = "firebrick4", "ssa_max" = "steelblue4"),
                     labels = c("Maximum SSA", "Minimum SSA")) -> SSASensPlot
 SSASensPlot
-ggsave(filename="SSASensPlot.png", plot=SSASensPlot, width=8, height=6)
+ggsave(filename="SSASensPlot.png", plot=SSASensPlot, width=10, height=6)
+

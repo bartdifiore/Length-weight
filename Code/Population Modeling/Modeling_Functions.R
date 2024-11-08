@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # Population Modeling Function Plots
 # -----------------------------------------------------------------------------
-
+library(tidyverse)
 # Density Function
 density <- tibble(N=c(0,50000,100000,150000,200000,250000,300000,350000,400000,450000,500000),
                   s1=c(0.99,0.98,0.88,0.75,0.6,0.5,0.35,0.20,0.1,0.05,0.01))
@@ -18,8 +18,11 @@ ggplot() +
   geom_line(data = predicted_data, aes(x = N, y = s), color = "blue", size = 1) +
   labs(title = "Density-Dependent Survival Function",
        x = "N (total population)",
-       y = "Survival Multiplier") +
-  theme_minimal() -> density_fxn
+       y = "Survival Multiplier")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 18, face = "bold"),  
+        axis.title = element_text(size = 16),                
+        axis.text = element_text(size = 16)) -> density_fxn
 ggsave(filename="DensityFunction.png", plot=density_fxn, width=6, height=5)
 
 # Condition & Total Eggs
@@ -32,10 +35,14 @@ eggz <- alpha_c*(cond^beta_c)
 predicted_condition <- tibble(condition = cond, totaleggs = eggz)
 ggplot() +
   geom_line(data = predicted_condition, aes(x = condition, y = totaleggs), color = "blue", size = 1) +
-  labs(title = "Condition and Total Eggs Function",
+  labs(title = "Condition-Dependent Fecundity Function",
        x = "Condition",
-       y = "Total Eggs") +
-  theme_minimal() -> condition_fxn
+       y = "Total Eggs/Fecundity") +
+  theme_minimal()+
+  theme(plot.title = element_text(size = 17, face = "bold"),  
+        axis.title = element_text(size = 16),                
+        axis.text = element_text(size = 16))-> condition_fxn
+condition_fxn
 ggsave(filename="ConditionFunction.png", plot=condition_fxn, width=6, height=5)
 
 # Recruitment Function
@@ -51,10 +58,13 @@ ggplot() +
   labs(title = "Recruitment Function",
        x = "Total Eggs",
        y = "Number of Age 1 Individuals") +
-  theme_minimal() -> recruitment_fxn
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold"),  
+        axis.title = element_text(size = 16),                
+        axis.text = element_text(size = 14))-> recruitment_fxn
 ggsave(filename="RecruitmentFunction.png", plot=recruitment_fxn, width=6, height=5)
 
-# Condition Affects Survival
+# Condition Dependent Survival
 condsurv <- function(x, x0, r, k, off){
   k/(1 + exp(-r*(x - x0))) + off
 }
@@ -69,8 +79,11 @@ for (i in seq_along(cond_sens)) {
 cond_surv_data <- tibble(condition = x, survival_probability = y)
 ggplot(cond_surv_data, aes(x = condition, y = survival_probability)) +
   geom_line(color = "blue", size = 1) +
-  labs(title = "Condition Affects Survival Function",
+  labs(title = "Condition-Dependent Survival Function",
        x = "Condition",
        y = "Survival Probability Multiplier") +
-  theme_minimal() -> condsurv_fxn
+  theme_minimal()+
+  theme(plot.title = element_text(size = 18, face = "bold"),  
+        axis.title = element_text(size = 16),                
+        axis.text = element_text(size = 16)) -> condsurv_fxn
 ggsave(filename="CondSurvFunction.png", plot=condsurv_fxn, width=6, height=5)

@@ -5,7 +5,7 @@ library(tidyverse)
 
 data2 <- data.frame(pop_min = c(4251.587, 2.735476e-49, 1.068914e-71, 217103.6, 43.54149),
                     pop_max = c(1625514, 1221029, 1221029, 1625514, 1625514),
-                    parameter = c("Condition", "Condition Affects Survival", "Condition Two-way", 
+                    parameter = c("Condition-Dependent Fecundity", "Condition-Dependent Survival", "Condition Two-way", 
                                   "Fecundity", "Recruitment"))
 data2$difference <- data2$pop_max - data2$pop_min
 
@@ -42,14 +42,18 @@ df2_long <- data2 %>%
          xmax = as.numeric(parameter) + 0.95 / 2)
 
 # tornado plot
-ggplot()+
+ggplot() +
   geom_rect(data = df2_long, 
             aes(ymax = ymax, ymin = ymin, xmax = xmax, xmin = xmin, fill = Type)) +
   theme_bw() +
   theme(axis.title.y = element_blank(), 
+        axis.title.x = element_text(size = 16),         
         legend.title = element_blank(),
-        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5, size = 10),
-        axis.text.y = element_text(size = 10)) + 
+        legend.position = "bottom",
+        axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 0.5, size = 16),
+        axis.text.y = element_text(size = 16),
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5), 
+        legend.text = element_text(size = 16)) + 
   geom_hline(yintercept = middle, linetype = "dashed", color = "red") +
   scale_x_continuous(breaks = 1:length(order.parameters), 
                      labels = order.parameters) +
@@ -57,6 +61,7 @@ ggplot()+
   labs(title = "Population Model Sensitivity Analysis: Total Female Population", 
        y = "Total Female Population") +
   scale_fill_manual(values = c("pop_min" = "firebrick4", "pop_max" = "steelblue4"),
-                    labels = c("Maximum Female Population", "Minimum Female Population")) -> popSensPlot
-ggsave(filename="PopSensPlot.png", plot=popSensPlot, width=8, height=6)
+    labels = c("Maximum Female Population", "Minimum Female Population")) -> popSensPlot
+popSensPlot
+ggsave(filename="PopSensPlot.png", plot=popSensPlot, width=10, height=6)
  

@@ -145,11 +145,12 @@ ssa_res[10] / ssa_res[9]
 ssa_dat <- tibble(cond_s=cond_sens,ssa=ssa_res)
 ggplot(ssa_dat, aes(x=factor(cond_s),y=ssa))+
   geom_col()+
-  labs(title="Condition Sensitivity Analysis: SSA",
+  labs(title="Condition Sensitivity Analysis: Spawning Stock Abundance",
        x="Condition Sensitivity Factor",
-       y="Spawning Stock Abundance (SSA)")+
+       y="Spawning Stock Abundance")+
   theme_bw() +
-  theme(text=element_text(size=15)) -> ssa_plot
+  theme(text=element_text(size=16)) -> ssa_plot
+ssa_plot
 ggsave(filename="CondSensSSA.png", plot=ssa_plot, height=6, width=10)
 
 # Calculate total population at time step 100 for all sensitivities

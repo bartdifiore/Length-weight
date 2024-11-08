@@ -181,20 +181,21 @@ cod.epu.df.long <- pivot_longer(cod.epu.df,
                             names_to = "Time_Period", 
                             values_to = "Slope")
 ggplot(cod.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = EPU)) +
-  geom_line() +
-  geom_point() +
+  geom_line(size = 1.5, show.legend = FALSE) +
+  geom_point(size = 3, show.legend = FALSE) +
   labs(title = "Atlantic Cod: β Coefficient by EPU", 
        x = "Time Period", 
        y = "β Coefficient") +
   theme_bw() +
-  theme(legend.box.background = element_rect(color="black"),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
-        text=element_text(size=15)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->cod_epu_plot
-print(cod_epu_plot)
-ggsave(filename="CodEPUPlot.png",plot=cod_epu_plot,width=8,height=6)
+  theme(legend.position = "bottom",            
+        legend.box.background = element_rect(color = "black"),
+        legend.title = element_text(size = 18),
+        legend.text = element_text(size = 16),
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16)) +
+  scale_color_manual(name = "EPU", values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->cod_epu_plot
+ggsave(filename="CodEPUPlot.png", plot=cod_epu_plot, width=7, height=6)
 
 ### Cod Predictions Plot With Plotted Points
 cod_vec_size <- seq(min(cod$LENGTH), max(cod$LENGTH), length.out = 100)
@@ -317,20 +318,21 @@ plaice.epu.df.long <- pivot_longer(plaice.epu.df,
                             names_to = "Time_Period", 
                             values_to = "Slope")
 ggplot(plaice.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = EPU)) +
-  geom_line() +
-  geom_point() +
+  geom_line(size = 1.5, show.legend = FALSE) +
+  geom_point(size = 3, show.legend = FALSE) +
   labs(title = "American Plaice: β Coefficient by EPU", 
        x = "Time Period", 
        y = "β Coefficient") +
   theme_bw() +
-  theme(legend.box.background = element_rect(color="black"),
+  theme(legend.position = "bottom",            
+        legend.box.background = element_rect(color = "black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
-        text=element_text(size=15)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "purple"))->plaice_epu_plot
-plaice_epu_plot
-ggsave(filename="PlaiceEPUPlot.png", plot=plaice_epu_plot, width=8, height=6)
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16)) +
+  scale_color_manual(name = "EPU", values = c("orangered2", "yellowgreen", "purple"))->plaice_epu_plot
+ggsave(filename="PlaiceEPUPlot.png", plot=plaice_epu_plot, width=7, height=6)
 
 ### Plaice Predictions Plot With Plotted Points
 plaice_vec_size <- seq(min(plaice$LENGTH), max(plaice$LENGTH), length.out = 100)
@@ -459,20 +461,21 @@ herring.epu.df.long <- pivot_longer(herring.epu.df,
                             names_to = "Time_Period", 
                             values_to = "Slope")
 ggplot(herring.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = EPU)) +
-  geom_line() +
-  geom_point() +
+  geom_line(size = 1.5, show.legend = FALSE) +
+  geom_point(size = 3, show.legend = FALSE) +
   labs(title = "Atlantic Herring: β Coefficient by EPU", 
        x = "Time Period", 
        y = "β Coefficient") +
   theme_bw() +
-  theme(legend.box.background = element_rect(color="black"),
+  theme(legend.position = "bottom",            
+        legend.box.background = element_rect(color = "black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
-        text=element_text(size=15)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->herring_epu_plot
-herring_epu_plot
-ggsave(filename="HerringEPUPlot.png", plot=herring_epu_plot, width=8, height=6)
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16)) +
+  scale_color_manual(name = "EPU", values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->herring_epu_plot
+ggsave(filename="HerringEPUPlot.png", plot=herring_epu_plot, width=7, height=6)
 
 # Herring Predictions Plot With Plotted Points
 herring_vec_size <- seq(min(herring$LENGTH), max(herring$LENGTH), length.out = 100)
@@ -604,20 +607,21 @@ dogfish.epu.df.long <- pivot_longer(dogfish.epu.df,
                             names_to = "Time_Period", 
                             values_to = "Slope")
 ggplot(dogfish.epu.df.long, aes(x = Time_Period, y = Slope, group = EPU, color = EPU)) +
-  geom_line() +
-  geom_point() +
+  geom_line(size = 1.5, show.legend = FALSE) +
+  geom_point(size = 3, show.legend = FALSE) +
   labs(title = "Spiny Dogfish: β Coefficient by EPU", 
        x = "Time Period", 
        y = "β Coefficient") +
   theme_bw() +
-  theme(legend.box.background = element_rect(color="black"),
+  theme(legend.position = "bottom",            
+        legend.box.background = element_rect(color = "black"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 12),
-        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
-        text=element_text(size=15)) +
-  scale_color_manual(name = "EPU",  values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->dogfish_epu_plot
-dogfish_epu_plot
-ggsave(filename="DogfishEPUPlot.png", plot=dogfish_epu_plot, width=8, height=6)
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16)) +
+  scale_color_manual(name = "EPU", values = c("orangered2", "yellowgreen", "steelblue2", "purple"))->dogfish_epu_plot
+ggsave(filename="DogfishEPUPlot.png", plot=dogfish_epu_plot, width=7, height=6)
 
 # Spiny Dogfish Predictions Plot With Plotted Points
 dogfish_vec_size <- seq(min(dogfish$LENGTH), max(dogfish$LENGTH), length.out = 100)
@@ -765,7 +769,7 @@ data <- lw_data %>%
                             YEAR >= 2016 ~ "Current")) %>%
   filter(!is.na(Time_Period)) %>%
   filter(!is.na(LENGTH) & !is.na(INDWT) & !is.na(COMNAME) & INDWT > 0)
-  
+
 grouped_data <- data %>%
   group_by(COMNAME, Time_Period) %>%
   summarise(count = n())
@@ -777,7 +781,8 @@ filtered_groups <- grouped_data %>%
 unique_species <- unique(filtered_groups$COMNAME)
 unique_species
 species <- c()
-
+unique_species = unique_species[unique_species != "LOGGERHEAD SEATURTLE"]
+unique_species
 for (spec in unique_species) {
   spec_decs <- filtered_groups %>%
     filter(COMNAME == spec)
@@ -785,27 +790,21 @@ for (spec in unique_species) {
     species <- c(species, spec)
   }
 }
-
+species
 b.by.Time_Period.df <- data.frame(row.names = species)
 lna.by.Time_Period.df <- data.frame(row.names = species)
 Time_Periods = c('Wigley', 'Recent')
 
-# filtering out large outliers
+# filtering out large outliers/loggerhead seaturtle
 data <- data %>%
   filter(! (COMNAME == "AMERICAN PLAICE" & INDWT > 4) ) %>%
   filter(! (COMNAME == "ATLANTIC HERRING" & INDWT > 2)) %>%
-  filter(! (COMNAME == "ATLANTIC SHARPNOSE SHARK" & LENGTH > 106)) %>%
-  ## blunt nose stingray - says they can be up to 100 cm. a few observations are close/over
-  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 50)) %>%
-  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 10 & LENGTH < 10)) %>%
-  # just some low observations... not sure if these are errors
-  filter(! (COMNAME == "BUTTERFISH" & INDWT <= 0.01 & LENGTH > 12.5)) %>%
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 100)) %>%
+  filter(! (COMNAME == "BLUNTNOSE STINGRAY" & INDWT > 10 & LENGTH < 15)) %>%
   filter(! (COMNAME == "LITTLE SKATE" & INDWT > 4)) %>%
   filter(! (COMNAME == "LONGFIN SQUID" & INDWT > 1)) %>%
-  filter(! (COMNAME == "LONGHORN SCULPIN" & INDWT > 750)) %>%
   filter(! (COMNAME == "NORTHERN KINGFISH" & INDWT > 1)) %>%
-  filter(! (COMNAME == "NORTHERN SHORTFIN SQUID" & INDWT > 1)) %>%
-  filter(! (COMNAME == "WINTER FLOUNDER" & LENGTH < 20 & INDWT > 3))
+  filter(! (COMNAME == "NORTHERN SHORTFIN SQUID" & INDWT > 1))
 
 for (d in Time_Periods) {
     b.by.Time_Period.df["B.Wigley"] <- NA
@@ -850,8 +849,10 @@ ggplot(b.by.Time_Period.df, aes(x = B.Result)) +
        x = "Result",
        y = "Number of Species") +
   theme_minimal() +
-  theme(text = element_text(size=12, face="bold")) -> beta_changes
-ggsave(filename="Beta_changes.png", plot=beta_changes, width=6, height=6)
+  theme(plot.title = element_text(size = 18, face = "bold"),  
+        axis.title = element_text(size = 16),                
+        axis.text = element_text(size = 16))-> beta_changes
+ggsave(filename="Beta_changes.png", plot=beta_changes, width=8, height=6)
 beta_changes
 
 beta_counts <- b.by.Time_Period.df %>%
@@ -864,7 +865,6 @@ increase_species <- b.by.Time_Period.df %>%
   filter(B.Result == "Increase") %>%
   rownames_to_column("Species") %>%  # If species names are row names
   select(Species)
-increase_species
 
 # looking at species names who showed an decrease
 decrease_species <- b.by.Time_Period.df %>%
@@ -935,4 +935,3 @@ rownames(change.df) <- str_to_title(tolower(rownames(change.df)))
 
 write.csv(b.by.Time_Period.df,"~/Downloads/BetaFile.csv", row.names = TRUE)
 write.csv(lna.by.Time_Period.df,"~/Downloads/AlphaFile.csv", row.names = TRUE)
-
